@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>大工の計算ツール集</title>
+  <style>
+    :root {
+      --bg: #17120d;
+      --panel: #fff8ed;
+      --ink: #21170f;
+      --muted: #7b6858;
+      --wood: #8b5e3c;
+      --accent: #f2bd3f;
+      --line: rgba(33, 23, 15, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(rgba(23, 18, 13, 0.86), rgba(23, 18, 13, 0.86)),
+        repeating-linear-gradient(90deg, #3b281b 0 18px, #332216 18px 36px);
+    }
+
+    main {
+      width: min(920px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 40px 0;
+    }
+
+    header {
+      color: #fff8ed;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 8vw, 48px);
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+      color: rgba(255, 248, 237, 0.78);
+      line-height: 1.7;
+    }
+
+    .tools {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+    }
+
+    a {
+      display: block;
+      min-height: 160px;
+      padding: 20px;
+      text-decoration: none;
+      color: var(--ink);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 18px 38px rgba(0, 0, 0, 0.22);
+      transition: transform 140ms ease, border-color 140ms ease;
+    }
+
+    a:hover,
+    a:focus-visible {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    .label {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      margin-bottom: 16px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      color: #3b2a16;
+      background: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+
+    .description {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>大工の計算ツール集</h1>
+      <p>現場で使う角度・廻り縁・円弧計算をまとめました。</p>
+    </header>
+
+    <section class="tools" aria-label="計算ツール一覧">
+      <a href="stair-angle.html">
+        <span class="label">STAIR</span>
+        <h2>階段角度計算</h2>
+        <div class="description">階段まわりの角度計算をブラウザで確認できます。</div>
+      </a>
+
+      <a href="moulding-calculator.html">
+        <span class="label">MOULDING</span>
+        <h2>斜め廻り縁 計算機</h2>
+        <div class="description">廻り縁の斜め加工に必要な寸法や角度を計算します。</div>
+      </a>
+
+      <a href="arc-calculator.html">
+        <span class="label">ARC</span>
+        <h2>円弧・半径 計算</h2>
+        <div class="description">円弧、半径、弦などの関係をすばやく求められます。</div>
+      </a>
+    </section>
+  </main>
+</body>
+</html>

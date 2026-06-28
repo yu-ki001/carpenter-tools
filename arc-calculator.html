@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>円弧・半径 計算</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+  :root {
+    --ink: #1a1a1a;
+    --paper: #f5f0e8;
+    --wood: #8b6f47;
+    --wood-light: #c49a6c;
+    --wood-dark: #5c4428;
+    --accent: #d4520a;
+    --rule: #c8b89a;
+    --result-bg: #fefcf8;
+    --tab-active: #fff8f0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--wood-dark);
+    padding: 16px 20px 12px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  header h1 {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  header span {
+    color: var(--wood-light);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+  }
+
+  .tabs {
+    display: flex;
+    background: var(--wood-dark);
+    border-bottom: 3px solid var(--accent);
+  }
+  .tab {
+    flex: 1;
+    padding: 10px 6px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--wood-light);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    border-top: 3px solid transparent;
+    margin-top: -3px;
+    transition: all 0.15s;
+    letter-spacing: 0.03em;
+  }
+  .tab.active {
+    background: var(--tab-active);
+    color: var(--wood-dark);
+    border-top: 3px solid var(--accent);
+    font-weight: 700;
+  }
+
+  .panel {
+    display: none;
+    padding: 20px 16px;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+  .panel.active { display: block; }
+
+  /* 図解エリア */
+  .diagram {
+    background: white;
+    border: 1.5px solid var(--rule);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .diagram svg { max-width: 100%; }
+  .diagram p {
+    font-size: 11px;
+    color: #888;
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+
+  /* 入力グループ */
+  .field {
+    margin-bottom: 14px;
+  }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--wood-dark);
+    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+  }
+  .field .hint {
+    font-size: 11px;
+    color: #999;
+    margin-bottom: 4px;
+  }
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  input[type=number] {
+    flex: 1;
+    height: 48px;
+    border: 2px solid var(--rule);
+    border-radius: 6px;
+    padding: 0 14px;
+    font-size: 20px;
+    font-family: inherit;
+    background: white;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type=number]:focus { border-color: var(--wood); }
+  .unit {
+    font-size: 13px;
+    color: #888;
+    min-width: 24px;
+  }
+
+  /* 計算ボタン */
+  .calc-btn {
+    width: 100%;
+    height: 52px;
+    background: var(--accent);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: inherit;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .calc-btn:active { background: #b84208; transform: scale(0.98); }
+
+  /* 結果エリア */
+  .results {
+    margin-top: 18px;
+    background: var(--result-bg);
+    border: 1.5px solid var(--rule);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .results-header {
+    background: var(--wood);
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 0.08em;
+  }
+  .result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .result-item:last-child { border-bottom: none; }
+  .result-label {
+    font-size: 12px;
+    color: #666;
+    flex-shrink: 0;
+    margin-right: 8px;
+  }
+  .result-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    text-align: right;
+  }
+  .result-sub {
+    font-size: 13px;
+    color: #888;
+    text-align: right;
+  }
+  .result-unit {
+    font-size: 13px;
+    color: #888;
+    margin-left: 3px;
+  }
+
+  /* 点打ちテーブル */
+  .point-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 2px;
+  }
+  .point-table th {
+    background: var(--wood);
+    color: white;
+    padding: 8px 10px;
+    text-align: center;
+    font-size: 12px;
+  }
+  .point-table td {
+    padding: 8px 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink);
+  }
+  .point-table tr:nth-child(even) td { background: #faf8f3; }
+  .point-table .highlight td {
+    background: #fff3ec;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .error {
+    background: #fff0ee;
+    border: 1.5px solid #f5a090;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #c0392b;
+    margin-top: 12px;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--wood);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 18px 0 10px;
+    padding-bottom: 4px;
+    border-bottom: 1.5px solid var(--rule);
+  }
+
+  .note {
+    font-size: 11px;
+    color: #999;
+    line-height: 1.6;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🪚 円弧・半径 計算</h1>
+  <span>大工の現場計算ツール</span>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab(0)">半径Rを求める</button>
+  <button class="tab" onclick="switchTab(1)">弧の長さ</button>
+  <button class="tab" onclick="switchTab(2)">点打ち墨出し</button>
+</div>
+
+<!-- タブ0: 半径Rを求める -->
+<div class="panel active" id="tab0">
+
+  <div class="diagram">
+    <svg viewBox="0 0 280 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- 大きな円の弧 -->
+      <path d="M 30 130 Q 140 30 250 130" stroke="#c49a6c" stroke-width="2.5" fill="none"/>
+      <!-- 弦（W） -->
+      <line x1="30" y1="130" x2="250" y2="130" stroke="#1a1a1a" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <!-- 矢高（H） -->
+      <line x1="140" y1="130" x2="140" y2="72" stroke="#d4520a" stroke-width="2"/>
+      <!-- Wラベル -->
+      <text x="140" y="148" text-anchor="middle" font-size="13" fill="#1a1a1a" font-weight="bold">W（弦の長さ）</text>
+      <!-- Hラベル -->
+      <text x="152" y="104" font-size="13" fill="#d4520a" font-weight="bold">H</text>
+      <text x="152" y="118" font-size="10" fill="#d4520a">矢高</text>
+      <!-- 端点 -->
+      <circle cx="30" cy="130" r="4" fill="#8b6f47"/>
+      <circle cx="250" cy="130" r="4" fill="#8b6f47"/>
+      <circle cx="140" cy="72" r="4" fill="#d4520a"/>
+      <!-- 両端矢印W -->
+      <line x1="30" y1="138" x2="250" y2="138" stroke="#1a1a1a" stroke-width="1"/>
+      <polygon points="30,135 36,138 30,141" fill="#1a1a1a"/>
+      <polygon points="250,135 244,138 250,141" fill="#1a1a1a"/>
+    </svg>
+    <p>弦（W）＝両端点の直線距離　矢高（H）＝弧の頂点までの高さ<br>この2つで半径Rが計算できます</p>
+  </div>
+
+  <div class="field">
+    <label>W　弦の長さ（両端点の距離）</label>
+    <div class="input-row">
+      <input type="number" id="r_w" placeholder="例: 1800" inputmode="decimal">
+      <span class="unit">mm</span>
+    </div>
+  </div>
+  <div class="field">
+    <label>H　矢高（弧の一番高い点）</label>
+    <div class="input-row">
+      <input type="number" id="r_h" placeholder="例: 200" inputmode="decimal">
+      <span class="unit">mm</span>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calcRadius()">計 算</button>
+
+  <div id="r_result"></div>
+</div>
+
+<!-- タブ1: 弧の長さ -->
+<div class="panel" id="tab1">
+
+  <div class="diagram">
+    <svg viewBox="0 0 280 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- 弧 -->
+      <path d="M 30 130 Q 140 20 250 130" stroke="#d4520a" stroke-width="3" fill="none"/>
+      <!-- 弦 -->
+      <line x1="30" y1="130" x2="250" y2="130" stroke="#c49a6c" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <!-- 半径R（中心から端） -->
+      <circle cx="140" cy="195" r="3" fill="#8b6f47"/>
+      <line x1="140" y1="195" x2="30" y2="130" stroke="#8b6f47" stroke-width="1.2" stroke-dasharray="3,3"/>
+      <line x1="140" y1="195" x2="250" y2="130" stroke="#8b6f47" stroke-width="1.2" stroke-dasharray="3,3"/>
+      <!-- ラベル -->
+      <text x="140" y="60" text-anchor="middle" font-size="12" fill="#d4520a" font-weight="bold">弧の長さ（L）</text>
+      <text x="140" y="148" text-anchor="middle" font-size="12" fill="#8b6f47">W（弦）</text>
+      <text x="72" y="170" text-anchor="middle" font-size="11" fill="#8b6f47">R</text>
+    </svg>
+    <p>W（弦）と H（矢高）から弧の長さを計算<br>または W と R（半径）からも計算できます</p>
+  </div>
+
+  <div class="section-title">入力方法を選ぶ</div>
+
+  <div style="display:flex;gap:8px;margin-bottom:16px;">
+    <button id="arc_mode0" onclick="setArcMode(0)" style="flex:1;padding:10px 4px;border:2px solid var(--accent);background:var(--accent);color:white;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:700;">W と H で計算</button>
+    <button id="arc_mode1" onclick="setArcMode(1)" style="flex:1;padding:10px 4px;border:2px solid var(--rule);background:white;color:var(--ink);border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer;">W と R で計算</button>
+  </div>
+
+  <div id="arc_inputs_wh">
+    <div class="field">
+      <label>W　弦の長さ</label>
+      <div class="input-row">
+        <input type="number" id="arc_w1" placeholder="例: 1800" inputmode="decimal">
+        <span class="unit">mm</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>H　矢高</label>
+      <div class="input-row">
+        <input type="number" id="arc_h1" placeholder="例: 200" inputmode="decimal">
+        <span class="unit">mm</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="arc_inputs_wr" style="display:none">
+    <div class="field">
+      <label>W　弦の長さ</label>
+      <div class="input-row">
+        <input type="number" id="arc_w2" placeholder="例: 1800" inputmode="decimal">
+        <span class="unit">mm</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>R　半径</label>
+      <div class="input-row">
+        <input type="number" id="arc_r2" placeholder="例: 2200" inputmode="decimal">
+        <span class="unit">mm</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calcArc()">計 算</button>
+  <div id="arc_result"></div>
+</div>
+
+<!-- タブ2: 点打ち墨出し -->
+<div class="panel" id="tab2">
+
+  <div class="diagram">
+    <svg viewBox="0 0 280 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- 弧と点 -->
+      <path d="M 30 140 Q 140 25 250 140" stroke="#e0d4c0" stroke-width="1.5" stroke-dasharray="2,2" fill="none"/>
+      <!-- 等間隔点 -->
+      <circle cx="30" cy="140" r="5" fill="#8b6f47"/>
+      <circle cx="75" cy="85" r="5" fill="#d4520a"/>
+      <circle cx="140" cy="55" r="5" fill="#d4520a"/>
+      <circle cx="205" cy="85" r="5" fill="#d4520a"/>
+      <circle cx="250" cy="140" r="5" fill="#8b6f47"/>
+      <!-- 弦 -->
+      <line x1="30" y1="140" x2="250" y2="140" stroke="#c49a6c" stroke-width="1.5"/>
+      <!-- 垂直線 -->
+      <line x1="75" y1="140" x2="75" y2="85" stroke="#d4520a" stroke-width="1.2" stroke-dasharray="3,2"/>
+      <line x1="140" y1="140" x2="140" y2="55" stroke="#d4520a" stroke-width="1.2" stroke-dasharray="3,2"/>
+      <line x1="205" y1="140" x2="205" y2="85" stroke="#d4520a" stroke-width="1.2" stroke-dasharray="3,2"/>
+      <!-- ラベル -->
+      <text x="30" y="157" text-anchor="middle" font-size="10" fill="#8b6f47">0</text>
+      <text x="75" y="157" text-anchor="middle" font-size="10" fill="#d4520a">1</text>
+      <text x="140" y="157" text-anchor="middle" font-size="10" fill="#d4520a">2</text>
+      <text x="205" y="157" text-anchor="middle" font-size="10" fill="#d4520a">3</text>
+      <text x="250" y="157" text-anchor="middle" font-size="10" fill="#8b6f47">4</text>
+    </svg>
+    <p>弦の上から等間隔に垂線を立て、各点の高さ（y）を計算<br>その点を結ぶと円弧が描けます</p>
+  </div>
+
+  <div class="field">
+    <label>W　弦の長さ（両端点の距離）</label>
+    <div class="input-row">
+      <input type="number" id="pt_w" placeholder="例: 1800" inputmode="decimal">
+      <span class="unit">mm</span>
+    </div>
+  </div>
+  <div class="field">
+    <label>H　矢高（弧の頂点の高さ）</label>
+    <div class="input-row">
+      <input type="number" id="pt_h" placeholder="例: 200" inputmode="decimal">
+      <span class="unit">mm</span>
+    </div>
+  </div>
+  <div class="field">
+    <label>分割数（点の数）</label>
+    <div class="hint">多いほど精度アップ。4〜10がおすすめ</div>
+    <div class="input-row">
+      <input type="number" id="pt_n" placeholder="例: 6" inputmode="numeric" min="2" max="20">
+      <span class="unit">分割</span>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calcPoints()">点を計算する</button>
+  <div id="pt_result"></div>
+</div>
+
+<script>
+// タブ切り替え
+function switchTab(i) {
+  document.querySelectorAll('.tab').forEach((t,j) => t.classList.toggle('active', i===j));
+  document.querySelectorAll('.panel').forEach((p,j) => p.classList.toggle('active', i===j));
+}
+
+// 弧モード切り替え
+let arcMode = 0;
+function setArcMode(m) {
+  arcMode = m;
+  document.getElementById('arc_inputs_wh').style.display = m===0 ? '' : 'none';
+  document.getElementById('arc_inputs_wr').style.display = m===1 ? '' : 'none';
+  const btns = [document.getElementById('arc_mode0'), document.getElementById('arc_mode1')];
+  btns.forEach((b,i) => {
+    b.style.background = i===m ? 'var(--accent)' : 'white';
+    b.style.color = i===m ? 'white' : 'var(--ink)';
+    b.style.border = i===m ? '2px solid var(--accent)' : '2px solid var(--rule)';
+    b.style.fontWeight = i===m ? '700' : '400';
+  });
+}
+
+function fmt(v, dec=1) {
+  if (dec === 0) return Math.round(v).toString();
+  return v.toFixed(dec).replace(/\.?0+$/, '');
+}
+
+// =========== タブ0: 半径R ===========
+function calcRadius() {
+  const W = parseFloat(document.getElementById('r_w').value);
+  const H = parseFloat(document.getElementById('r_h').value);
+  const el = document.getElementById('r_result');
+
+  if (!W || !H || W <= 0 || H <= 0) {
+    el.innerHTML = '<div class="error">WとHを入力してください</div>'; return;
+  }
+  if (H > W/2) {
+    el.innerHTML = '<div class="error">矢高HはW/2（' + fmt(W/2) + 'mm）より大きくできません</div>'; return;
+  }
+
+  const R = (W*W) / (8*H) + H/2;
+  const theta = 2 * Math.asin(W / (2*R));   // 中心角（ラジアン）
+  const arcLen = R * theta;                   // 正確な弧の長さ
+  const thetaDeg = theta * 180 / Math.PI;
+
+  el.innerHTML = `
+    <div class="results">
+      <div class="results-header">計算結果</div>
+      <div class="result-item">
+        <span class="result-label">半径 R</span>
+        <span><span class="result-value">${fmt(R)}</span><span class="result-unit">mm</span></span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">半径 R（cm）</span>
+        <span><span class="result-value">${fmt(R/10)}</span><span class="result-unit">cm</span></span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">中心角</span>
+        <span><span class="result-value">${fmt(thetaDeg)}</span><span class="result-unit">°</span></span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">弧の長さ（正確）</span>
+        <span><span class="result-value">${fmt(arcLen)}</span><span class="result-unit">mm</span></span>
+      </div>
+    </div>
+    <p class="note">式：R = W²÷(8H) + H÷2<br>入力値：W=${W}mm　H=${H}mm</p>
+  `;
+}
+
+// =========== タブ1: 弧の長さ ===========
+function calcArc() {
+  const el = document.getElementById('arc_result');
+  let W, H, R;
+
+  if (arcMode === 0) {
+    W = parseFloat(document.getElementById('arc_w1').value);
+    H = parseFloat(document.getElementById('arc_h1').value);
+    if (!W || !H || W<=0 || H<=0) { el.innerHTML='<div class="error">WとHを入力してください</div>'; return; }
+    if (H > W/2) { el.innerHTML='<div class="error">矢高HはW/2（'+fmt(W/2)+'mm）より大きくできません</div>'; return; }
+    R = (W*W)/(8*H) + H/2;
+  } else {
+    W = parseFloat(document.getElementById('arc_w2').value);
+    R = parseFloat(document.getElementById('arc_r2').value);
+    if (!W || !R || W<=0 || R<=0) { el.innerHTML='<div class="error">WとRを入力してください</div>'; return; }
+    if (W > 2*R) { el.innerHTML='<div class="error">弦Wは直径（'+fmt(2*R)+'mm）より大きくできません</div>'; return; }
+    H = R - Math.sqrt(R*R - (W/2)*(W/2));
+  }
+
+  const theta = 2 * Math.asin(W / (2*R));
+  const arcExact = R * theta;
+  // 近似式（小矢高の場合の簡易計算）
+  const arcApprox = (8*(W*W + 4*H*H)/(3*W) - W) / 3 + W;
+  // もっとシンプルな近似
+  const arcSimple = (8*Math.sqrt(W*W/4 + H*H) - W) / 3;
+
+  el.innerHTML = `
+    <div class="results">
+      <div class="results-header">計算結果</div>
+      <div class="result-item">
+        <span class="result-label">弧の長さ（正確）</span>
+        <span><span class="result-value">${fmt(arcExact)}</span><span class="result-unit">mm</span></span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">弧の長さ（近似）</span>
+        <span><span class="result-value">${fmt(arcSimple)}</span><span class="result-unit">mm</span></span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">半径 R</span>
+        <span><span class="result-value">${fmt(R)}</span><span class="result-unit">mm</span></span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">矢高 H</span>
+        <span><span class="result-value">${fmt(H)}</span><span class="result-unit">mm</span></span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">中心角</span>
+        <span><span class="result-value">${fmt(theta*180/Math.PI)}</span><span class="result-unit">°</span></span>
+      </div>
+    </div>
+    <p class="note">近似式：(8√(W²/4+H²) - W) ÷ 3<br>H/W が小さいほど近似精度が高くなります</p>
+  `;
+}
+
+// =========== タブ2: 点打ち墨出し ===========
+function calcPoints() {
+  const W = parseFloat(document.getElementById('pt_w').value);
+  const H = parseFloat(document.getElementById('pt_h').value);
+  const N = parseInt(document.getElementById('pt_n').value);
+  const el = document.getElementById('pt_result');
+
+  if (!W || !H || !N || W<=0 || H<=0 || N<2) {
+    el.innerHTML = '<div class="error">W・H・分割数を入力してください（分割数は2以上）</div>'; return;
+  }
+  if (H > W/2) {
+    el.innerHTML = '<div class="error">矢高HはW/2（'+fmt(W/2)+'mm）より大きくできません</div>'; return;
+  }
+
+  const R = (W*W)/(8*H) + H/2;
+  // 円の中心は弦の中点からR-H下（または弦の中央下方）
+  // 中心座標: x=W/2, y=-(R-H) （弦をy=0として）
+  const cx = W/2;
+  const cy = -(R - H); // 弦より下
+
+  let rows = '';
+  for (let i=0; i<=N; i++) {
+    const x = (W / N) * i;
+    // 弦からの距離
+    const dx = x - cx;
+    const yFromCenter = Math.sqrt(R*R - dx*dx); // 中心からの距離（y方向）
+    const yFromChord = yFromCenter + cy; // 弦（y=0）からの高さ
+    const xFromEnd = x; // 端からの距離
+
+    const isEdge = (i===0 || i===N);
+    rows += `<tr class="${isEdge?'':''}">
+      <td>${i}</td>
+      <td>${fmt(xFromEnd, 0)}</td>
+      <td><strong>${fmt(yFromChord, 1)}</strong></td>
+    </tr>`;
+  }
+
+  // 動的図解を生成
+  const svgW = 280, svgH = 140;
+  const margin = 24;
+  const drawW = svgW - margin*2;
+  const drawH = svgH - 30;
+  const scaleX = drawW / W;
+  const scaleY = drawH / (H * 2.2);
+
+  // 弦のy座標（SVG内、下から）
+  const baseY = svgH - 18;
+
+  // 弧のパス
+  let arcPath = '';
+  const steps = 60;
+  for (let s=0; s<=steps; s++) {
+    const xx = (W/steps)*s;
+    const dx2 = xx - cx;
+    const yy2 = Math.sqrt(R*R - dx2*dx2) + cy;
+    const sx = margin + xx*scaleX;
+    const sy = baseY - yy2*scaleY;
+    arcPath += (s===0?'M':'L') + sx.toFixed(1) + ' ' + sy.toFixed(1) + ' ';
+  }
+
+  // 点と垂線
+  let svgPoints = '';
+  const pointList = [];
+  for (let i=0; i<=N; i++) {
+    const x = (W/N)*i;
+    const dx2 = x - cx;
+    const yy2 = Math.sqrt(R*R - dx2*dx2) + cy;
+    const sx = margin + x*scaleX;
+    const sy = baseY - yy2*scaleY;
+    pointList.push({x, y: yy2, sx, sy});
+
+    // 垂線（端点以外）
+    if (i>0 && i<N) {
+      svgPoints += `<line x1="${sx.toFixed(1)}" y1="${baseY}" x2="${sx.toFixed(1)}" y2="${sy.toFixed(1)}" stroke="#d4520a" stroke-width="1" stroke-dasharray="3,2"/>`;
+    }
+    // 点番号ラベル
+    svgPoints += `<text x="${sx.toFixed(1)}" y="${(baseY+12).toFixed(1)}" text-anchor="middle" font-size="9" fill="${i===0||i===N?'#8b6f47':'#d4520a'}">${i}</text>`;
+    // 点
+    svgPoints += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${i===0||i===N?4:5}" fill="${i===0||i===N?'#8b6f47':'#d4520a'}"/>`;
+  }
+
+  // 弦の左端に「ここが基準」矢印
+  const arrowX = margin;
+
+  el.innerHTML = `
+    <div class="diagram" style="margin-top:16px;">
+      <svg viewBox="0 0 ${svgW} ${svgH}" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- 弦 -->
+        <line x1="${margin}" y1="${baseY}" x2="${margin+drawW}" y2="${baseY}" stroke="#8b6f47" stroke-width="2"/>
+        <!-- 弧 -->
+        <path d="${arcPath}" stroke="#c49a6c" stroke-width="2" fill="none"/>
+        <!-- 垂線と点 -->
+        ${svgPoints}
+        <!-- 「左端が基準」ラベル -->
+        <text x="${margin}" y="${baseY-8}" text-anchor="middle" font-size="9" fill="#8b6f47">基準</text>
+        <!-- 距離の矢印例（点1） -->
+        ${N>=2 ? `
+        <line x1="${margin}" y1="${baseY+22}" x2="${pointList[1].sx.toFixed(1)}" y2="${baseY+22}" stroke="#1a1a1a" stroke-width="1"/>
+        <polygon points="${margin},${baseY+19} ${margin+6},${baseY+22} ${margin},${baseY+25}" fill="#1a1a1a"/>
+        <polygon points="${pointList[1].sx.toFixed(1)},${baseY+19} ${(pointList[1].sx-6).toFixed(1)},${baseY+22} ${pointList[1].sx.toFixed(1)},${baseY+25}" fill="#1a1a1a"/>
+        <text x="${((margin+pointList[1].sx)/2).toFixed(1)}" y="${baseY+20}" text-anchor="middle" font-size="8" fill="#1a1a1a">←端からの距離→</text>
+        ` : ''}
+      </svg>
+      <p style="font-size:11px;color:#888;margin-top:4px;">
+        左端（点0）を<strong>スタート</strong>にして、弦の上を「端からの距離」分だけ測って印 → そこから<strong>垂直に</strong>「高さ y」分だけ上へ → 点を打つ
+      </p>
+    </div>
+    <div class="results">
+      <div class="results-header">使用半径：R = ${fmt(R,0)} mm　／　分割数：${N}</div>
+      <table class="point-table">
+        <thead>
+          <tr>
+            <th>点番号</th>
+            <th>←左端からの距離</th>
+            <th>↑垂直に上げる高さ</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <p class="note">
+      ① 弦（直線）を引く<br>
+      ② 左端（点0）から表の「距離」を測って垂線を立てる<br>
+      ③ その垂線を「高さ」分だけ上に測って点を打つ<br>
+      ④ 全部の点を曲線で結ぶ → 円弧の完成！<br>
+      ※ 点0・点${N}は高さ0（弦の上にある端点）
+    </p>
+  `;
+}
+
+// Enterキーで計算
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const t = document.querySelector('.tab.active');
+    const idx = [...document.querySelectorAll('.tab')].indexOf(t);
+    if (idx===0) calcRadius();
+    else if (idx===1) calcArc();
+    else calcPoints();
+  }
+});
+</script>
+</body>
+</html>

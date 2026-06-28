@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>斜め廻り縁 計算機</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+  :root {
+    --wood: #8B5E3C;
+    --wood-light: #C49A6C;
+    --wood-dark: #5C3D1E;
+    --ink: #1A1209;
+    --paper: #F7F3EE;
+    --paper-dark: #EDE7DF;
+    --accent: #2E6B9E;
+    --accent-light: #E8F2FA;
+    --warn: #C0392B;
+    --ok: #27AE60;
+    --border: #D4C5B0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--wood-dark);
+    color: #F7F3EE;
+    padding: 16px 20px 12px;
+    border-bottom: 4px solid var(--wood);
+  }
+
+  header h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  header p {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin-top: 2px;
+  }
+
+  .container {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  /* 図解 */
+  .diagram-section {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .diagram-section h2 {
+    font-size: 0.75rem;
+    color: var(--wood);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  svg.diagram {
+    width: 100%;
+    max-width: 340px;
+  }
+
+  /* タブ切り替え */
+  .tab-bar {
+    display: flex;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .tab-bar button {
+    flex: 1;
+    padding: 9px 6px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    font-weight: 600;
+    border: none;
+    background: var(--paper-dark);
+    color: #777;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    border-right: 1px solid var(--border);
+    touch-action: manipulation;
+  }
+
+  .tab-bar button:last-child { border-right: none; }
+
+  .tab-bar button.active {
+    background: var(--wood);
+    color: white;
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* 高さ÷長さ入力 */
+  .hl-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .hl-row label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    min-width: 36px;
+  }
+
+  .hl-row input {
+    flex: 1;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 1.05rem;
+    font-family: inherit;
+    font-weight: 700;
+    color: var(--ink);
+    outline: none;
+    text-align: center;
+  }
+
+  .hl-row input:focus { border-color: var(--accent); }
+
+  .hl-result {
+    background: var(--accent-light);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+
+  .hl-result span { font-size: 0.85rem; color: var(--accent); font-weight: 500; }
+  .hl-result strong { font-size: 1.2rem; color: var(--accent); }
+
+  .hl-apply-btn {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 11px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .hl-apply-btn:active { opacity: 0.8; }
+
+  /* 入力カード */
+  .input-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .input-card h2 {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--wood);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .input-row:last-child { margin-bottom: 0; }
+
+  .input-label {
+    flex: 1;
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .input-label span {
+    display: block;
+    font-size: 0.72rem;
+    color: #888;
+    font-weight: 400;
+    margin-top: 1px;
+  }
+
+  .input-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .stepper {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .stepper button {
+    background: var(--paper-dark);
+    border: none;
+    width: 36px;
+    height: 44px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--ink);
+    touch-action: manipulation;
+    transition: background 0.1s;
+  }
+
+  .stepper button:active { background: var(--border); }
+
+  .stepper input {
+    border: none;
+    border-left: 1.5px solid var(--border);
+    border-right: 1.5px solid var(--border);
+    width: 68px;
+    height: 44px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-family: inherit;
+    font-weight: 700;
+    color: var(--ink);
+    background: white;
+    outline: none;
+  }
+
+  .unit {
+    font-size: 0.85rem;
+    color: #666;
+    min-width: 16px;
+  }
+
+  /* 計算ボタン */
+  .calc-btn {
+    display: block;
+    width: 100%;
+    background: var(--wood);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: background 0.15s;
+    touch-action: manipulation;
+    margin-bottom: 16px;
+  }
+
+  .calc-btn:active { background: var(--wood-dark); }
+
+  /* 結果 */
+  .result-card {
+    background: white;
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .result-card.show { display: block; }
+
+  .result-header {
+    background: var(--accent);
+    color: white;
+    padding: 10px 16px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .result-main {
+    display: flex;
+    gap: 0;
+  }
+
+  .result-item {
+    flex: 1;
+    padding: 16px 12px;
+    text-align: center;
+    border-right: 1px solid var(--border);
+  }
+
+  .result-item:last-child { border-right: none; }
+
+  .result-item .label {
+    font-size: 0.72rem;
+    color: #666;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+
+  .result-item .value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .result-item .value-unit {
+    font-size: 0.8rem;
+    color: var(--accent);
+    margin-top: 2px;
+  }
+
+  /* 現場メモ */
+  .memo-card {
+    background: #FFFDE7;
+    border: 1px solid #F9A825;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .memo-card.show { display: block; }
+
+  .memo-card h3 {
+    font-size: 0.75rem;
+    color: #795548;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+  }
+
+  .memo-card p {
+    font-size: 0.85rem;
+    color: #4E342E;
+    line-height: 1.6;
+  }
+
+  .memo-card strong {
+    color: var(--wood-dark);
+  }
+
+  /* 周辺値テーブル */
+  .table-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .table-card.show { display: block; }
+
+  .table-card h3 {
+    padding: 10px 14px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--wood);
+    border-bottom: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+
+  thead th {
+    background: var(--paper-dark);
+    padding: 8px 10px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: #555;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr { border-bottom: 1px solid #EEE; }
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody td {
+    padding: 9px 10px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  tbody tr.highlight {
+    background: var(--accent-light);
+    font-weight: 700;
+  }
+
+  tbody tr.highlight td { color: var(--accent); }
+
+  /* SVG diagram styles */
+  .diagram-label { font-family: 'Noto Sans JP', sans-serif; font-size: 11px; }
+  .diagram-angle { font-family: 'Noto Sans JP', sans-serif; font-size: 10px; fill: #555; }
+
+  .notice {
+    font-size: 0.75rem;
+    color: #888;
+    text-align: center;
+    padding-bottom: 24px;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>斜め廻り縁 切り角計算機</h1>
+  <p>留め切り角度・斜め切り角度を自動計算</p>
+</header>
+
+<div class="container">
+
+  <!-- 図解 -->
+  <div class="diagram-section">
+    <h2>切り方のイメージ</h2>
+    <svg class="diagram" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- 天井面 -->
+      <line x1="20" y1="60" x2="200" y2="60" stroke="#8B5E3C" stroke-width="3"/>
+      <!-- 壁面（垂直） -->
+      <line x1="200" y1="60" x2="200" y2="180" stroke="#8B5E3C" stroke-width="3"/>
+      <!-- 斜め廻り縁 本体 -->
+      <rect x="160" y="64" width="36" height="14" rx="2"
+            fill="#C49A6C" stroke="#5C3D1E" stroke-width="1.5"
+            transform="rotate(-45 178 71)"/>
+      <!-- 壁コーナーの角度表示 -->
+      <path d="M 185 60 A 15 15 0 0 1 200 75" fill="none" stroke="#2E6B9E" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <text x="170" y="80" class="diagram-angle" fill="#2E6B9E">壁の角度</text>
+      <!-- 廻り縁の傾き -->
+      <line x1="140" y1="100" x2="200" y2="60" stroke="#C0392B" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <path d="M 170 80 A 10 10 0 0 0 183 72" fill="none" stroke="#C0392B" stroke-width="1.5"/>
+      <text x="128" y="98" class="diagram-angle" fill="#C0392B">廻り縁</text>
+      <text x="128" y="110" class="diagram-angle" fill="#C0392B">の角度</text>
+      <!-- 鋸マーク（留め切り） -->
+      <g transform="translate(240,60)">
+        <rect x="0" y="0" width="60" height="50" rx="4" fill="#F7F3EE" stroke="#D4C5B0" stroke-width="1"/>
+        <text x="30" y="14" class="diagram-label" text-anchor="middle" fill="#555" font-size="9">材の断面</text>
+        <!-- 留め切り線 -->
+        <line x1="10" y1="45" x2="50" y2="10" stroke="#2E6B9E" stroke-width="2" stroke-dasharray="3,2"/>
+        <text x="30" y="52" class="diagram-label" text-anchor="middle" fill="#2E6B9E" font-size="9">留め切り角</text>
+        <!-- ベベル線 -->
+        <line x1="10" y1="20" x2="50" y2="38" stroke="#C0392B" stroke-width="1.5" stroke-dasharray="3,2"/>
+        <text x="55" y="32" class="diagram-label" text-anchor="start" fill="#C0392B" font-size="8">ベベル</text>
+      </g>
+      <!-- ラベル -->
+      <text x="30" y="55" class="diagram-label" fill="#5C3D1E">天井</text>
+      <text x="205" y="130" class="diagram-label" fill="#5C3D1E">壁</text>
+    </svg>
+  </div>
+
+  <!-- 入力 -->
+  <div class="input-card">
+    <h2>入力</h2>
+
+    <!-- 廻り縁の傾き：直接入力 or 高さ÷長さ -->
+    <div style="margin-bottom:14px;">
+      <div style="font-size:0.9rem;font-weight:600;margin-bottom:8px;">
+        廻り縁の傾き角度
+        <span style="font-size:0.72rem;color:#888;font-weight:400;margin-left:6px;">入力方法を選択</span>
+      </div>
+      <div class="tab-bar">
+        <button class="active" id="tab-direct" onclick="switchTab('direct')">角度を直接入力</button>
+        <button id="tab-hl" onclick="switchTab('hl')">高さ ÷ 長さから計算</button>
+      </div>
+
+      <!-- 直接入力 -->
+      <div class="tab-panel active" id="panel-direct">
+        <div class="input-row" style="margin-bottom:0;">
+          <div class="input-label">
+            <span style="margin-top:0;">天井が斜め・勾配天井など（水平なら 0°）</span>
+          </div>
+          <div class="input-ctrl">
+            <div class="stepper">
+              <button onclick="step('tilt',-1)">－</button>
+              <input type="number" id="tilt" value="45" min="0" max="89" oninput="onInput()">
+              <button onclick="step('tilt',1)">＋</button>
+            </div>
+            <span class="unit">°</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 高さ÷長さ入力 -->
+      <div class="tab-panel" id="panel-hl">
+        <div style="font-size:0.75rem;color:#888;margin-bottom:8px;">メジャーで測った値を入力してください（単位は揃えれば mm でも cm でも OK）</div>
+        <div class="hl-row">
+          <label>高さ</label>
+          <input type="number" id="hlH" placeholder="例：100" min="0" oninput="calcHL()">
+          <span style="font-size:0.85rem;color:#666;">mm</span>
+        </div>
+        <div class="hl-row">
+          <label>長さ</label>
+          <input type="number" id="hlL" placeholder="例：100" min="0.1" oninput="calcHL()">
+          <span style="font-size:0.85rem;color:#666;">mm</span>
+        </div>
+        <div class="hl-result" id="hlResult" style="display:none;">
+          <span>算出角度</span>
+          <strong id="hlAngle">—</strong>
+          <span>°</span>
+        </div>
+        <button class="hl-apply-btn" onclick="applyHL()">この角度を使って計算する</button>
+      </div>
+    </div>
+
+    <div class="input-row">
+      <div class="input-label">
+        コーナーの角度
+        <span>直角なら 90°、鈍角・鋭角コーナーは実測値</span>
+      </div>
+      <div class="input-ctrl">
+        <div class="stepper">
+          <button onclick="step('corner',-1)">－</button>
+          <input type="number" id="corner" value="90" min="1" max="179" oninput="onInput()">
+          <button onclick="step('corner',1)">＋</button>
+        </div>
+        <span class="unit">°</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calc()">計　算</button>
+
+  <!-- 結果 -->
+  <div class="result-card" id="resultCard">
+    <div class="result-header">計算結果</div>
+    <div class="result-main">
+      <div class="result-item">
+        <div class="label">留め切り角度<br>（Miter angle）</div>
+        <div class="value" id="miterVal">—</div>
+        <div class="value-unit">°</div>
+      </div>
+      <div class="result-item">
+        <div class="label">斜め切り角度<br>（Bevel angle）</div>
+        <div class="value" id="bevelVal">—</div>
+        <div class="value-unit">°</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 現場メモ -->
+  <div class="memo-card" id="memoCard">
+    <h3>🪚 現場での使い方</h3>
+    <p id="memoText"></p>
+  </div>
+
+  <!-- 周辺値テーブル -->
+  <div class="table-card" id="tableCard">
+    <h3>±2° の参考値一覧</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>コーナー角</th>
+          <th>留め切り角</th>
+          <th>斜め切り角</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <p class="notice">数値は参考値です。必ず現物で確認してください。</p>
+
+</div>
+
+<script>
+function rad(d){ return d * Math.PI / 180; }
+function deg(r){ return r * 180 / Math.PI; }
+
+function switchTab(tab){
+  document.getElementById('tab-direct').classList.toggle('active', tab==='direct');
+  document.getElementById('tab-hl').classList.toggle('active', tab==='hl');
+  document.getElementById('panel-direct').classList.toggle('active', tab==='direct');
+  document.getElementById('panel-hl').classList.toggle('active', tab==='hl');
+}
+
+function calcHL(){
+  const h = parseFloat(document.getElementById('hlH').value);
+  const l = parseFloat(document.getElementById('hlL').value);
+  const res = document.getElementById('hlResult');
+  if(!isNaN(h) && !isNaN(l) && l > 0){
+    const angle = deg(Math.atan(h / l));
+    document.getElementById('hlAngle').textContent = angle.toFixed(1);
+    res.style.display = 'flex';
+  } else {
+    res.style.display = 'none';
+  }
+}
+
+function applyHL(){
+  const h = parseFloat(document.getElementById('hlH').value);
+  const l = parseFloat(document.getElementById('hlL').value);
+  if(isNaN(h) || isNaN(l) || l <= 0 || h < 0){
+    alert('高さと長さを正しく入力してください');
+    return;
+  }
+  const angle = deg(Math.atan(h / l));
+  document.getElementById('tilt').value = angle.toFixed(1);
+  switchTab('direct');
+  calc();
+}
+
+function calcAngles(tilt, corner){
+  const L1 = tilt;
+  const L2 = corner;
+  const miter = deg(Math.atan(Math.sin(rad(L1)) / Math.tan(rad(L2/2))));
+  const bevel = deg(Math.asin(Math.cos(rad(L1)) * Math.cos(rad(L2/2))));
+  return { miter, bevel };
+}
+
+function fmt(v){ return v.toFixed(1); }
+
+function step(id, delta){
+  const el = document.getElementById(id);
+  let v = parseFloat(el.value) + delta;
+  const mn = parseFloat(el.min), mx = parseFloat(el.max);
+  v = Math.max(mn, Math.min(mx, v));
+  el.value = v;
+  onInput();
+}
+
+function onInput(){ /* リアルタイム計算したい場合はここで calc() を呼ぶ */ }
+
+function calc(){
+  const tilt = parseFloat(document.getElementById('tilt').value);
+  const corner = parseFloat(document.getElementById('corner').value);
+
+  if(isNaN(tilt)||isNaN(corner)||tilt<0||tilt>=90||corner<=0||corner>=180){
+    alert('入力値を確認してください');
+    return;
+  }
+
+  const {miter, bevel} = calcAngles(tilt, corner);
+
+  document.getElementById('miterVal').textContent = fmt(miter);
+  document.getElementById('bevelVal').textContent = fmt(bevel);
+
+  document.getElementById('resultCard').classList.add('show');
+
+  // 現場メモ
+  const memo = document.getElementById('memoCard');
+  const memoTxt = document.getElementById('memoText');
+  let txt = `廻り縁を <strong>${fmt(tilt)}°</strong> 傾いたコーナー（壁の角 <strong>${fmt(corner)}°</strong>）に収める場合：`;
+  txt += `<br><br>① 丸鋸の <strong>留め切り角を ${fmt(miter)}°</strong> に設定（台の角度）`;
+  txt += `<br>② 刃の <strong>傾き（ベベル）を ${fmt(bevel)}°</strong> に設定`;
+  if(tilt === 0){
+    txt += `<br><br>※ 傾きが 0° の場合、ベベル角は 0°（立て切り）です。`;
+  }
+  if(Math.abs(corner - 90) < 0.1 && Math.abs(tilt - 45) < 0.1){
+    txt += `<br><br>✅ 標準的な 45° 斜め廻り縁・直角コーナーの組み合わせです。`;
+  }
+  memoTxt.innerHTML = txt;
+  memo.classList.add('show');
+
+  // テーブル
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  for(let d = -2; d <= 2; d++){
+    const c = corner + d;
+    if(c <= 0 || c >= 180) continue;
+    const {miter: m, bevel: b} = calcAngles(tilt, c);
+    const tr = document.createElement('tr');
+    if(d === 0) tr.classList.add('highlight');
+    tr.innerHTML = `<td>${fmt(c)}°</td><td>${fmt(m)}°</td><td>${fmt(b)}°</td>`;
+    tbody.appendChild(tr);
+  }
+  document.getElementById('tableCard').classList.add('show');
+
+  document.getElementById('resultCard').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+</script>
+</body>
+</html>
