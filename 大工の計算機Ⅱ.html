@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>大工の三角関数電卓</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Oswald:wght@400;700&display=swap');
+
+  :root {
+    --wood: #8B5E3C;
+    --wood-light: #C4935A;
+    --wood-dark: #5C3D1E;
+    --steel: #2C3E50;
+    --steel-light: #3D5166;
+    --yellow: #F5C518;
+    --cream: #FFF8EE;
+    --text: #1A1209;
+    --muted: #7A6550;
+    --success: #4CAF50;
+    --error: #E53935;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: #1A1209;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px;
+    background-image:
+      repeating-linear-gradient(90deg, rgba(139,94,60,0.05) 0px, rgba(139,94,60,0.05) 1px, transparent 1px, transparent 40px),
+      repeating-linear-gradient(0deg, rgba(139,94,60,0.05) 0px, rgba(139,94,60,0.05) 1px, transparent 1px, transparent 40px);
+  }
+
+  .app {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  header {
+    text-align: center;
+    padding: 16px 0 12px;
+  }
+
+  header h1 {
+    font-family: 'Oswald', sans-serif;
+    color: var(--yellow);
+    font-size: 22px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  header p {
+    color: var(--wood-light);
+    font-size: 11px;
+    margin-top: 2px;
+    letter-spacing: 1px;
+  }
+
+  /* モード切替タブ */
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-bottom: 12px;
+    background: var(--wood-dark);
+    padding: 4px;
+    border-radius: 10px;
+  }
+
+  .tab {
+    background: transparent;
+    border: none;
+    color: var(--wood-light);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 7px 2px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1.3;
+  }
+
+  .tab.active {
+    background: var(--yellow);
+    color: var(--wood-dark);
+  }
+
+  /* パネル */
+  .panel {
+    display: none;
+    background: var(--cream);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .panel.active { display: block; }
+
+  .panel-header {
+    background: var(--wood);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel-header .icon {
+    width: 38px;
+    height: 38px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .panel-header h2 {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .panel-header p {
+    color: rgba(255,255,255,0.7);
+    font-size: 11px;
+    margin-top: 1px;
+  }
+
+  /* 三角形ビジュアル */
+  .triangle-visual {
+    background: var(--steel);
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .triangle-svg-wrap {
+    position: relative;
+  }
+
+  .triangle-svg-wrap svg {
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+  }
+
+  /* 角度モード切替 */
+  .angle-mode-toggle {
+    display: flex;
+    gap: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid var(--wood);
+    flex-shrink: 0;
+  }
+
+  .angle-mode-toggle button {
+    padding: 4px 10px;
+    border: none;
+    background: transparent;
+    color: var(--wood);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .angle-mode-toggle button.active {
+    background: var(--wood);
+    color: #fff;
+  }
+
+  /* インプットエリア */
+  .inputs {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 2px solid #E0D0BB;
+    border-radius: 10px;
+    padding: 10px 14px;
+    transition: border-color 0.2s;
+  }
+
+  .input-row:focus-within {
+    border-color: var(--wood);
+  }
+
+  .input-row.highlight {
+    border-color: var(--yellow);
+    background: #FFFBF0;
+  }
+
+  .input-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 80px;
+  }
+
+  .input-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 13px;
+    font-family: 'Oswald', sans-serif;
+    flex-shrink: 0;
+  }
+
+  .badge-red { background: #FFCDD2; color: #C62828; }
+  .badge-blue { background: #BBDEFB; color: #1565C0; }
+  .badge-green { background: #C8E6C9; color: #2E7D32; }
+  .badge-yellow { background: var(--yellow); color: var(--wood-dark); }
+
+  .input-label span {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .input-row input[type="number"] {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 18px;
+    font-weight: 700;
+    font-family: 'Oswald', sans-serif;
+    color: var(--text);
+    background: transparent;
+    text-align: right;
+    min-width: 0;
+  }
+
+  .input-unit {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 700;
+    min-width: 20px;
+    text-align: right;
+  }
+
+  /* 計算ボタン */
+  .calc-btn {
+    margin: 0 16px 12px;
+    width: calc(100% - 32px);
+    padding: 14px;
+    background: var(--wood);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+    box-shadow: 0 4px 0 var(--wood-dark);
+  }
+
+  .calc-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--wood-dark);
+  }
+
+  /* 結果 */
+  .result-box {
+    margin: 0 16px 16px;
+    background: var(--steel);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: none;
+  }
+
+  .result-box.show { display: block; }
+
+  .result-box.error {
+    background: #FFEBEE;
+    border: 2px solid var(--error);
+  }
+
+  .result-box.error .result-main {
+    color: var(--error);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .result-item {
+    background: rgba(255,255,255,0.07);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .result-item.full { grid-column: 1 / -1; }
+
+  .result-item .r-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+  }
+
+  .result-item .r-value {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    color: var(--yellow);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .result-item .r-unit {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    margin-left: 3px;
+  }
+
+  /* 解説エリア */
+  .explanation {
+    margin: 0 16px 16px;
+    background: #FFF3E0;
+    border-left: 4px solid var(--wood-light);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--wood-dark);
+    line-height: 1.6;
+    display: none;
+  }
+
+  .explanation.show { display: block; }
+
+  .explanation strong { color: var(--wood); }
+
+  /* 基本計算機パネル */
+  .basic-calc {
+    padding: 16px;
+  }
+
+  .display {
+    background: var(--steel);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+
+  .display .expr {
+    color: rgba(255,255,255,0.5);
+    font-size: 12px;
+    min-height: 18px;
+    text-align: right;
+    font-family: 'Oswald', sans-serif;
+  }
+
+  .display .val {
+    color: var(--yellow);
+    font-size: 32px;
+    font-family: 'Oswald', sans-serif;
+    text-align: right;
+    font-weight: 700;
+    word-break: break-all;
+  }
+
+  .deg-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    justify-content: flex-end;
+  }
+
+  .deg-btn {
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 2px solid var(--wood);
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .deg-btn.active {
+    background: var(--wood);
+    color: #fff;
+  }
+
+  .btn-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  .btn-grid button {
+    padding: 14px 6px;
+    border-radius: 8px;
+    border: none;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.1s;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.2);
+  }
+
+  .btn-grid button:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+  }
+
+  .btn-num {
+    background: #fff;
+    color: var(--text);
+    font-family: 'Oswald', sans-serif !important;
+    font-size: 18px !important;
+    border: 2px solid #E0D0BB !important;
+  }
+
+  .btn-op {
+    background: var(--wood-light);
+    color: #fff;
+  }
+
+  .btn-trig {
+    background: var(--steel);
+    color: var(--yellow);
+    font-size: 12px !important;
+  }
+
+  .btn-eq {
+    background: var(--yellow);
+    color: var(--wood-dark);
+    font-size: 20px !important;
+  }
+
+  .btn-clear {
+    background: #FFCDD2;
+    color: #C62828;
+  }
+
+  .btn-wide {
+    grid-column: span 2;
+  }
+
+  /* ヒント表示 */
+  .hint-bar {
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    padding: 8px;
+    background: #fff;
+    border-top: 1px solid #E0D0BB;
+  }
+
+  /* 隅木パネル専用スタイル */
+  .sumigi-visual {
+    background: var(--steel);
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .result-section-title {
+    color: rgba(255,255,255,0.45);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin: 8px 0 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    grid-column: 1 / -1;
+  }
+
+  .result-item.accent .r-value { color: #81D4FA; }
+  .result-item.accent2 .r-value { color: #A5D6A7; }
+  .result-item.accent3 .r-value { color: #FFCC80; }
+
+  .exp-formula {
+    background: rgba(255,255,255,0.06);
+    border-radius: 6px;
+    padding: 5px 10px;
+    margin: 3px 0;
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    font-family: 'Oswald', sans-serif;
+  }
+
+  .exp-formula strong { color: var(--yellow); }
+
+  /* 用語説明カード */
+  .trig-guide {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .guide-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 14px;
+    border-left: 5px solid;
+  }
+
+  .guide-card.sin { border-color: #C62828; }
+  .guide-card.cos { border-color: #1565C0; }
+  .guide-card.tan { border-color: #2E7D32; }
+
+  .guide-card h3 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+
+  .guide-card.sin h3 { color: #C62828; }
+  .guide-card.cos h3 { color: #1565C0; }
+  .guide-card.tan h3 { color: #2E7D32; }
+
+  .guide-card .formula {
+    background: #F5F5F5;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    color: var(--steel);
+    margin: 6px 0;
+  }
+
+  .guide-card p {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .guide-card .example {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--wood-dark);
+    background: #FFF8EE;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <h1>🔨 大工の三角関数電卓</h1>
+    <p>現場で使える・わかりやすい</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('slope')">⬡<br>勾配・斜辺</button>
+    <button class="tab" onclick="switchTab('sumigi')">🏠<br>寄棟<br>隅木</button>
+    <button class="tab" onclick="switchTab('calc')">🔢<br>三角関数<br>電卓</button>
+    <button class="tab" onclick="switchTab('guide')">📖<br>用語説明</button>
+  </div>
+
+  <!-- ① 勾配・斜辺パネル -->
+  <div class="panel active" id="panel-slope">
+    <div class="panel-header">
+      <div class="icon">📐</div>
+      <div>
+        <h2>勾配・斜辺の計算</h2>
+        <p>2つ入力すれば残り1つを自動計算</p>
+      </div>
+    </div>
+
+    <!-- 三角形ビジュアル -->
+    <div class="triangle-visual">
+      <svg width="260" height="180" viewBox="0 0 260 180">
+        <!-- 直角三角形 -->
+        <polygon points="20,160 240,160 240,30" fill="rgba(245,197,24,0.1)" stroke="rgba(245,197,24,0.3)" stroke-width="1"/>
+        <!-- 辺 -->
+        <line x1="20" y1="160" x2="240" y2="160" stroke="#C62828" stroke-width="3" stroke-linecap="round"/>
+        <line x1="240" y1="30" x2="240" y2="160" stroke="#1565C0" stroke-width="3" stroke-linecap="round"/>
+        <line x1="20" y1="160" x2="240" y2="30" stroke="#2E7D32" stroke-width="3" stroke-linecap="round"/>
+        <!-- 直角マーク -->
+        <rect x="225" y="145" width="15" height="15" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+        <!-- 角度弧 -->
+        <path d="M 55,160 A 35,35 0 0,0 31.5,138" fill="none" stroke="var(--yellow)" stroke-width="2"/>
+        <!-- ラベル -->
+        <text x="125" y="178" fill="#C62828" font-size="14" font-weight="bold" text-anchor="middle" font-family="Oswald">水平距離（底辺）</text>
+        <text x="252" y="100" fill="#1565C0" font-size="14" font-weight="bold" text-anchor="start" font-family="Oswald">高さ</text>
+        <text x="100" y="80" fill="#2E7D32" font-size="14" font-weight="bold" text-anchor="middle" transform="rotate(-33,100,80)" font-family="Oswald">斜辺（長さ）</text>
+        <text x="70" y="153" fill="var(--yellow)" font-size="13" font-weight="bold" font-family="Oswald">角度 θ</text>
+      </svg>
+    </div>
+
+    <div class="inputs">
+      <div class="input-row" id="row-angle">
+        <div class="input-label">
+          <div class="input-badge badge-yellow">θ</div>
+          <span id="angle-label">角度</span>
+        </div>
+        <input type="number" id="inp-angle" placeholder="例: 30" min="0" max="89.9" step="0.1">
+        <div class="angle-mode-toggle">
+          <button id="btn-deg" class="active" onclick="setAngleMode('deg')">度°</button>
+          <button id="btn-sun" onclick="setAngleMode('sun')">寸</button>
+        </div>
+      </div>
+      <div class="input-row" id="row-base">
+        <div class="input-label">
+          <div class="input-badge badge-red">底</div>
+          <span>水平距離</span>
+        </div>
+        <input type="number" id="inp-base" placeholder="例: 1000" min="0" step="1">
+        <span class="input-unit">mm</span>
+      </div>
+      <div class="input-row" id="row-height">
+        <div class="input-label">
+          <div class="input-badge badge-blue">高</div>
+          <span>高さ</span>
+        </div>
+        <input type="number" id="inp-height" placeholder="例: 600" min="0" step="1">
+        <span class="input-unit">mm</span>
+      </div>
+      <div class="input-row" id="row-hyp">
+        <div class="input-label">
+          <div class="input-badge badge-green">斜</div>
+          <span>斜辺</span>
+        </div>
+        <input type="number" id="inp-hyp" placeholder="例: 1166" min="0" step="1">
+        <span class="input-unit">mm</span>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calcSlope()">計　算　する</button>
+
+    <div class="result-box" id="result-slope">
+      <div class="result-grid" id="result-slope-grid"></div>
+    </div>
+
+    <div class="explanation" id="exp-slope"></div>
+
+    <div class="hint-bar">💡 クリアしたいときは数値を消してください</div>
+  </div>
+
+  <!-- ② 隅木計算パネル -->
+  <div class="panel" id="panel-sumigi">
+    <div class="panel-header">
+      <div class="icon">🏠</div>
+      <div>
+        <h2>寄棟・隅木の計算</h2>
+        <p>屋根勾配と半スパンを入れるだけ</p>
+      </div>
+    </div>
+
+    <!-- 平面図ビジュアル（寄棟） -->
+    <div class="sumigi-visual">
+      <svg width="280" height="170" viewBox="0 0 280 170">
+        <!-- 屋根平面（寄棟） -->
+        <polygon points="20,150 260,150 260,20 20,20" fill="rgba(245,197,24,0.05)" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,3"/>
+        <!-- 棟（中央） -->
+        <line x1="80" y1="85" x2="200" y2="85" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- 隅木4本 -->
+        <line x1="20" y1="20" x2="80" y2="85" stroke="var(--yellow)" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="260" y1="20" x2="200" y2="85" stroke="var(--yellow)" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="20" y1="150" x2="80" y2="85" stroke="var(--yellow)" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="260" y1="150" x2="200" y2="85" stroke="var(--yellow)" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- 母屋方向（谷線） -->
+        <line x1="140" y1="20" x2="140" y2="85" stroke="#81D4FA" stroke-width="1.5" stroke-dasharray="3,2"/>
+        <line x1="140" y1="150" x2="140" y2="85" stroke="#81D4FA" stroke-width="1.5" stroke-dasharray="3,2"/>
+        <!-- 半スパン矢印 -->
+        <line x1="20" y1="163" x2="140" y2="163" stroke="#C62828" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="140" y1="163" x2="20" y2="163" stroke="#C62828" stroke-width="1.5" marker-end="url(#arr2)"/>
+        <defs>
+          <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#C62828"/>
+          </marker>
+          <marker id="arr2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M6,0 L0,3 L6,6 Z" fill="#C62828"/>
+          </marker>
+        </defs>
+        <!-- ラベル -->
+        <text x="80" y="160" fill="#C62828" font-size="11" font-weight="bold" text-anchor="middle" font-family="Noto Sans JP">半スパン</text>
+        <text x="140" y="75" fill="#fff" font-size="11" font-weight="bold" text-anchor="middle" font-family="Noto Sans JP">棟</text>
+        <text x="42" y="58" fill="var(--yellow)" font-size="12" font-weight="bold" text-anchor="middle" font-family="Noto Sans JP" transform="rotate(42,42,58)">隅木</text>
+        <text x="148" y="42" fill="#81D4FA" font-size="10" text-anchor="start" font-family="Noto Sans JP">垂木方向</text>
+      </svg>
+    </div>
+
+    <div class="inputs">
+      <!-- 屋根勾配 -->
+      <div class="input-row">
+        <div class="input-label">
+          <div class="input-badge badge-yellow">勾</div>
+          <span id="sumigi-kobai-label">屋根勾配</span>
+        </div>
+        <input type="number" id="sumigi-kobai" placeholder="例: 4" min="0.1" max="100" step="0.5">
+        <div class="angle-mode-toggle">
+          <button id="sumigi-btn-sun" class="active" onclick="setSumigiMode('sun')">寸</button>
+          <button id="sumigi-btn-deg" onclick="setSumigiMode('deg')">度°</button>
+        </div>
+      </div>
+      <!-- 半スパン -->
+      <div class="input-row">
+        <div class="input-label">
+          <div class="input-badge badge-red">半</div>
+          <span>半スパン</span>
+        </div>
+        <input type="number" id="sumigi-span" placeholder="例: 1820" min="1" step="1">
+        <span class="input-unit">mm</span>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calcSumigi()">隅木を計算する</button>
+
+    <div class="result-box" id="result-sumigi">
+      <div class="result-grid" id="result-sumigi-grid"></div>
+    </div>
+
+    <div class="explanation" id="exp-sumigi"></div>
+
+    <div class="hint-bar">💡 半スパン = 建物幅の半分（軒先〜棟の水平距離）</div>
+  </div>
+
+  <!-- ③ 三角関数電卓 -->
+  <div class="panel" id="panel-calc">
+    <div class="panel-header">
+      <div class="icon">🔢</div>
+      <div>
+        <h2>三角関数電卓</h2>
+        <p>sin・cos・tan を使った計算</p>
+      </div>
+    </div>
+
+    <div class="basic-calc">
+      <div class="display">
+        <div class="expr" id="calc-expr"></div>
+        <div class="val" id="calc-val">0</div>
+      </div>
+
+      <div class="deg-toggle">
+        <button class="deg-btn active" id="deg-btn" onclick="setDegMode('deg')">度 DEG</button>
+        <button class="deg-btn" id="rad-btn" onclick="setDegMode('rad')">ラジアン RAD</button>
+      </div>
+
+      <div class="btn-grid">
+        <!-- 三角関数 -->
+        <button class="btn-trig" onclick="inputTrig('sin(')">sin<br><small style="opacity:.6">対辺÷斜辺</small></button>
+        <button class="btn-trig" onclick="inputTrig('cos(')">cos<br><small style="opacity:.6">隣辺÷斜辺</small></button>
+        <button class="btn-trig" onclick="inputTrig('tan(')">tan<br><small style="opacity:.6">対辺÷隣辺</small></button>
+        <button class="btn-trig" onclick="inputTrig('√(')">√<br><small style="opacity:.6">平方根</small></button>
+
+        <button class="btn-trig" onclick="inputTrig('asin(')">sin⁻¹<br><small style="opacity:.6">角度を求める</small></button>
+        <button class="btn-trig" onclick="inputTrig('acos(')">cos⁻¹<br><small style="opacity:.6">角度を求める</small></button>
+        <button class="btn-trig" onclick="inputTrig('atan(')">tan⁻¹<br><small style="opacity:.6">角度を求める</small></button>
+        <button class="btn-op" onclick="inputChar('²')">x²</button>
+
+        <!-- 数字行 -->
+        <button class="btn-clear" onclick="clearAll()">AC</button>
+        <button class="btn-op" onclick="inputChar('(')"> ( </button>
+        <button class="btn-op" onclick="inputChar(')')"> ) </button>
+        <button class="btn-op" onclick="inputChar('÷')">÷</button>
+
+        <button class="btn-num" onclick="inputChar('7')">7</button>
+        <button class="btn-num" onclick="inputChar('8')">8</button>
+        <button class="btn-num" onclick="inputChar('9')">9</button>
+        <button class="btn-op" onclick="inputChar('×')">×</button>
+
+        <button class="btn-num" onclick="inputChar('4')">4</button>
+        <button class="btn-num" onclick="inputChar('5')">5</button>
+        <button class="btn-num" onclick="inputChar('6')">6</button>
+        <button class="btn-op" onclick="inputChar('−')">−</button>
+
+        <button class="btn-num" onclick="inputChar('1')">1</button>
+        <button class="btn-num" onclick="inputChar('2')">2</button>
+        <button class="btn-num" onclick="inputChar('3')">3</button>
+        <button class="btn-op" onclick="inputChar('+')">+</button>
+
+        <button class="btn-num btn-wide" onclick="inputChar('0')">0</button>
+        <button class="btn-num" onclick="inputChar('.')">.</button>
+        <button class="btn-eq" onclick="calculate()">=</button>
+      </div>
+    </div>
+
+    <div class="hint-bar">💡 sin⁻¹・cos⁻¹・tan⁻¹ → 角度を逆算できます</div>
+  </div>
+
+  <!-- ④ 用語説明 -->
+  <div class="panel" id="panel-guide">
+    <div class="panel-header">
+      <div class="icon">📖</div>
+      <div>
+        <h2>三角関数の意味</h2>
+        <p>若い子への説明に使ってください</p>
+      </div>
+    </div>
+
+    <div class="trig-guide">
+      <div class="guide-card sin">
+        <h3>sin（サイン）</h3>
+        <div class="formula">sin(角度) = 高さ ÷ 斜辺</div>
+        <p>「斜辺に対して、どれだけ<strong>上がっているか</strong>」の割合。<br>
+           sin(30°) = 0.5 → 斜辺が1000mmなら高さは500mm</p>
+        <div class="example">🔨 使い方：高さ = 斜辺 × sin(角度)</div>
+      </div>
+
+      <div class="guide-card cos">
+        <h3>cos（コサイン）</h3>
+        <div class="formula">cos(角度) = 水平距離 ÷ 斜辺</div>
+        <p>「斜辺に対して、どれだけ<strong>水平に進むか</strong>」の割合。<br>
+           cos(30°) ≈ 0.866 → 斜辺が1000mmなら底辺は866mm</p>
+        <div class="example">🔨 使い方：底辺 = 斜辺 × cos(角度)</div>
+      </div>
+
+      <div class="guide-card tan">
+        <h3>tan（タンジェント）</h3>
+        <div class="formula">tan(角度) = 高さ ÷ 水平距離</div>
+        <p>「水平に1進んだとき、どれだけ<strong>上がるか</strong>」。<br>
+           勾配（寸勾配）と同じ考え方！<br>
+           tan(30°) ≈ 0.577 → 10寸進むと約5.8寸上がる</p>
+        <div class="example">🔨 使い方：高さ = 底辺 × tan(角度)<br>
+           ※ 屋根勾配・階段勾配でよく使う！</div>
+      </div>
+
+      <div style="background:#fff;border-radius:10px;padding:14px;border-left:5px solid var(--yellow)">
+        <h3 style="font-family:'Oswald',sans-serif;font-size:16px;color:var(--wood);margin-bottom:6px">⁻¹ は「逆算」</h3>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6">
+          sin⁻¹・cos⁻¹・tan⁻¹ は、答えから<strong>角度を求める</strong>ときに使います。<br><br>
+          例）高さ600mm・底辺1000mm → 角度は？<br>
+          → tan⁻¹(600÷1000) = tan⁻¹(0.6) ≈ <strong>30.96°</strong>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== タブ切替 ====================
+function switchTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ==================== 隅木計算 ====================
+let sumigiMode = 'sun'; // 'sun' or 'deg'
+
+function setSumigiMode(mode) {
+  sumigiMode = mode;
+  document.getElementById('sumigi-btn-sun').classList.toggle('active', mode === 'sun');
+  document.getElementById('sumigi-btn-deg').classList.toggle('active', mode === 'deg');
+  const inp = document.getElementById('sumigi-kobai');
+  if (mode === 'sun') {
+    document.getElementById('sumigi-kobai-label').textContent = '屋根勾配';
+    inp.placeholder = '例: 4 (4寸勾配)';
+    inp.step = '0.5';
+  } else {
+    document.getElementById('sumigi-kobai-label').textContent = '屋根角度';
+    inp.placeholder = '例: 21.8';
+    inp.step = '0.1';
+  }
+  inp.value = '';
+}
+
+function calcSumigi() {
+  const kobaiRaw = parseFloat(document.getElementById('sumigi-kobai').value);
+  const span     = parseFloat(document.getElementById('sumigi-span').value);
+
+  const rb = document.getElementById('result-sumigi');
+  const rg = document.getElementById('result-sumigi-grid');
+  const ex = document.getElementById('exp-sumigi');
+
+  if (isNaN(kobaiRaw) || isNaN(span) || span <= 0) {
+    rb.className = 'result-box show error';
+    rg.innerHTML = '<div class="result-main">⚠️ 屋根勾配と半スパンを入力してください</div>';
+    ex.className = 'explanation';
+    return;
+  }
+
+  // 勾配→ラジアン変換
+  // 寸勾配: tanθ = kobai/10  → 垂木（平勾配）角度
+  // 度数:   θ = kobaiRaw°
+  let thetaRad; // 平勾配（垂木）の角度
+  let sunKobai;
+  if (sumigiMode === 'sun') {
+    sunKobai = kobaiRaw;
+    thetaRad = Math.atan(kobaiRaw / 10);
+  } else {
+    thetaRad = kobaiRaw * Math.PI / 180;
+    sunKobai = Math.tan(thetaRad) * 10;
+  }
+
+  const thetaDeg = thetaRad * 180 / Math.PI;
+
+  // ===== 隅木計算の核心 =====
+  // 寄棟の隅木は平面上45°方向に走る
+  // 隅木の水平投影長 = 半スパン × √2
+  const spanH = span; // 半スパン（水平）
+  const sumigiHorizontal = spanH * Math.sqrt(2); // 隅木の水平長
+
+  // 棟高（矢) = 半スパン × tan(平勾配)
+  const ya = spanH * Math.tan(thetaRad);
+
+  // 隅木の勾配（立面上）= ya / sumigiHorizontal = tan(θ) / √2
+  // 隅木勾配の寸表示 = tan(θ)/√2 × 10
+  const sumigiTan = Math.tan(thetaRad) / Math.sqrt(2);
+  const sumigiSun = sumigiTan * 10;
+  const sumigiAngleRad = Math.atan(sumigiTan);
+  const sumigiAngleDeg = sumigiAngleRad * 180 / Math.PI;
+
+  // 隅木実長（3次元斜辺）= √(水平長² + 棟高²)
+  const sumigiJitsucho = Math.sqrt(sumigiHorizontal * sumigiHorizontal + ya * ya);
+
+  // 転び角（隅木が倒れる角度）
+  // = 平面45°に対して隅木断面が傾く角
+  // tanφ = sin(45°) × tan(θ) / cos(θ) の近似ではなく正確式:
+  // 転び = atan( sin(45°) / tan(隅木勾配角) ) - 45° ... は異なる
+  // 正確には: 転び角 = atan( cos(45°) × tan(θ) )
+  // 一般的な定義: 転び = atan(tan(平勾配) / √2 × √2) = atan(tan(平勾配)) = 平勾配 ... ではない
+  // 正確式: 転び角φ = atan( sin(隅木水平角45°) ) ここで垂直面に対して
+  // 実務的には: 転び = 90° - atan(√2 / tan(θ)) を使用
+  const korobiRad = Math.atan(Math.sqrt(2) / Math.tan(thetaRad));
+  const korobiDeg = 90 - (korobiRad * 180 / Math.PI);
+  // ※ 転び角 = atan(tan(平勾配) × sin(45°))
+  const korobiCheck = Math.atan(Math.tan(thetaRad) * Math.sin(Math.PI/4)) * 180 / Math.PI;
+
+  // 峠墨（上端墨）= 隅木断面で棟に合わせる切り込み深さ
+  // 峠 = 隅木幅/2 × tan(転び) ではなく、
+  // 峠高さ = 隅木幅 × tan(転び) / 2  ← 断面寸法が必要なので角度のみ表示
+  // ここでは「峠角度」= 転び角と同義で表示し、解説する
+
+  // 隅木展開勾配（墨付け用）: 平勾配 × √2 / 2... ではなく
+  // 隅木の見付け勾配（正面から見た勾配）= ya / (spanH) = tan(θ) → 平勾配と同じ
+  // 隅木の平勾配投影 = ya / sumigiHorizontal = sumigiTan
+
+  rb.className = 'result-box show';
+  rg.innerHTML = `
+    <div class="result-section-title">📐 入力値の確認</div>
+    <div class="result-item">
+      <div class="r-label">平勾配（垂木）</div>
+      <div class="r-value">${fmt(sunKobai, 2)}<span class="r-unit">寸 / ${fmt(thetaDeg,2)}°</span></div>
+    </div>
+    <div class="result-item">
+      <div class="r-label">半スパン</div>
+      <div class="r-value">${fmt(spanH, 0)}<span class="r-unit">mm</span></div>
+    </div>
+
+    <div class="result-section-title">🔺 棟高（矢）</div>
+    <div class="result-item full accent2">
+      <div class="r-label">棟高（矢）= 半スパン × tan(平勾配)</div>
+      <div class="r-value">${fmt(ya, 1)}<span class="r-unit">mm</span></div>
+    </div>
+
+    <div class="result-section-title">🪵 隅木 実長・勾配</div>
+    <div class="result-item full accent">
+      <div class="r-label">隅木 実長（3次元の長さ）</div>
+      <div class="r-value">${fmt(sumigiJitsucho, 1)}<span class="r-unit">mm</span></div>
+    </div>
+    <div class="result-item">
+      <div class="r-label">隅木 水平投影長</div>
+      <div class="r-value">${fmt(sumigiHorizontal, 1)}<span class="r-unit">mm</span></div>
+    </div>
+    <div class="result-item">
+      <div class="r-label">隅木 勾配</div>
+      <div class="r-value">${fmt(sumigiSun, 3)}<span class="r-unit">寸</span></div>
+    </div>
+    <div class="result-item full">
+      <div class="r-label">隅木 勾配角度</div>
+      <div class="r-value">${fmt(sumigiAngleDeg, 3)}<span class="r-unit">°</span></div>
+    </div>
+
+    <div class="result-section-title">↺ 転び・峠墨</div>
+    <div class="result-item full accent3">
+      <div class="r-label">転び角（隅木の傾き）</div>
+      <div class="r-value">${fmt(korobiCheck, 3)}<span class="r-unit">°</span></div>
+    </div>
+    <div class="result-item full">
+      <div class="r-label">峠墨角度（上端の基準角）</div>
+      <div class="r-value">${fmt(korobiCheck, 3)}<span class="r-unit">°（転び角と同値）</span></div>
+    </div>
+  `;
+
+  ex.className = 'explanation show';
+  ex.innerHTML = `
+    📐 <strong>計算の考え方：</strong><br>
+    <div class="exp-formula">① 隅木は平面上で45°方向 → 水平長 = 半スパン × √2 = <strong>${fmt(sumigiHorizontal,1)}mm</strong></div>
+    <div class="exp-formula">② 棟高（矢）= 半スパン × tan(${fmt(sunKobai,2)}寸) = <strong>${fmt(ya,1)}mm</strong></div>
+    <div class="exp-formula">③ 隅木実長 = √(水平長² + 棟高²) = <strong>${fmt(sumigiJitsucho,1)}mm</strong></div>
+    <div class="exp-formula">④ 隅木勾配 = 平勾配 ÷ √2 = ${fmt(sunKobai,2)} ÷ 1.414 = <strong>${fmt(sumigiSun,3)}寸</strong></div>
+    <div class="exp-formula">⑤ 転び角 = atan(tan(平勾配) × sin45°) = <strong>${fmt(korobiCheck,3)}°</strong></div>
+  `;
+}
+
+// ==================== 角度モード ====================
+let angleMode = 'deg'; // 'deg' or 'sun'
+
+function setAngleMode(mode) {
+  angleMode = mode;
+  document.getElementById('btn-deg').classList.toggle('active', mode === 'deg');
+  document.getElementById('btn-sun').classList.toggle('active', mode === 'sun');
+
+  const inp = document.getElementById('inp-angle');
+  if (mode === 'deg') {
+    document.getElementById('angle-label').textContent = '角度';
+    inp.placeholder = '例: 30';
+    inp.max = '89.9';
+    inp.step = '0.1';
+  } else {
+    document.getElementById('angle-label').textContent = '寸勾配';
+    inp.placeholder = '例: 4 (4寸勾配)';
+    inp.max = '100';
+    inp.step = '0.5';
+  }
+  inp.value = '';
+}
+
+// ==================== 勾配計算 ====================
+function calcSlope() {
+  let angleRaw = parseFloat(document.getElementById('inp-angle').value);
+  const base   = parseFloat(document.getElementById('inp-base').value);
+  const height = parseFloat(document.getElementById('inp-height').value);
+  const hyp    = parseFloat(document.getElementById('inp-hyp').value);
+
+  // 寸勾配モードなら度数に変換（寸勾配 = tan値×10 → tanA = sun/10）
+  let angle = angleRaw;
+  let sunKobai = NaN;
+  if (angleMode === 'sun' && !isNaN(angleRaw)) {
+    sunKobai = angleRaw;
+    angle = Math.atan(angleRaw / 10) * 180 / Math.PI;
+  }
+
+  const hasAngle  = !isNaN(angle);
+  const hasBase   = !isNaN(base);
+  const hasHeight = !isNaN(height);
+  const hasHyp    = !isNaN(hyp);
+
+  const count = [hasAngle, hasBase, hasHeight, hasHyp].filter(Boolean).length;
+
+  const rb = document.getElementById('result-slope');
+  const rg = document.getElementById('result-slope-grid');
+  const ex = document.getElementById('exp-slope');
+
+  rb.className = 'result-box show';
+
+  if (count < 2) {
+    rb.className = 'result-box show error';
+    rg.innerHTML = '<div class="result-main">⚠️ 2つ以上入力してください</div>';
+    ex.className = 'explanation';
+    return;
+  }
+
+  let A, B, H, L;
+  let explanation = '';
+  const angleLabel = angleMode === 'sun'
+    ? `${fmt(angleRaw, 2)}寸勾配（≈${fmt(angle, 2)}°）`
+    : `${fmt(angle, 2)}°`;
+
+  if (hasAngle && hasBase) {
+    A = angle * Math.PI / 180;
+    B = base;
+    H = B * Math.tan(A);
+    L = B / Math.cos(A);
+    explanation = `tan(${angleLabel}) = ${fmt(Math.tan(A), 4)} を使って計算<br>高さ = ${fmt(B)}mm × tan = <strong>${fmt(H)}mm</strong><br>斜辺 = ${fmt(B)}mm ÷ cos = <strong>${fmt(L)}mm</strong>`;
+  } else if (hasAngle && hasHeight) {
+    A = angle * Math.PI / 180;
+    H = height;
+    B = H / Math.tan(A);
+    L = H / Math.sin(A);
+    explanation = `高さ÷tan(${angleLabel}) で底辺、高さ÷sin で斜辺を計算<br>底辺 = <strong>${fmt(B)}mm</strong>、斜辺 = <strong>${fmt(L)}mm</strong>`;
+  } else if (hasAngle && hasHyp) {
+    A = angle * Math.PI / 180;
+    L = hyp;
+    B = L * Math.cos(A);
+    H = L * Math.sin(A);
+    explanation = `底辺 = 斜辺 × cos(${angleLabel}) = <strong>${fmt(B)}mm</strong><br>高さ = 斜辺 × sin = <strong>${fmt(H)}mm</strong>`;
+  } else if (hasBase && hasHeight) {
+    B = base; H = height;
+    L = Math.sqrt(B*B + H*H);
+    A = Math.atan(H/B);
+    explanation = `斜辺 = √(${fmt(B)}² + ${fmt(H)}²) = <strong>${fmt(L)}mm</strong><br>角度 = tan⁻¹(${fmt(H)}÷${fmt(B)}) = <strong>${fmt(A*180/Math.PI, 2)}°</strong>`;
+  } else if (hasBase && hasHyp) {
+    B = base; L = hyp;
+    if (L < B) { showError(rb, rg, '斜辺は底辺より大きい値を入力してください'); return; }
+    H = Math.sqrt(L*L - B*B);
+    A = Math.acos(B/L);
+    explanation = `高さ = √(斜辺²−底辺²) = <strong>${fmt(H)}mm</strong><br>角度 = cos⁻¹(${fmt(B)}÷${fmt(L)}) = <strong>${fmt(A*180/Math.PI, 2)}°</strong>`;
+  } else if (hasHeight && hasHyp) {
+    H = height; L = hyp;
+    if (L < H) { showError(rb, rg, '斜辺は高さより大きい値を入力してください'); return; }
+    B = Math.sqrt(L*L - H*H);
+    A = Math.asin(H/L);
+    explanation = `底辺 = √(斜辺²−高さ²) = <strong>${fmt(B)}mm</strong><br>角度 = sin⁻¹(${fmt(H)}÷${fmt(L)}) = <strong>${fmt(A*180/Math.PI, 2)}°</strong>`;
+  }
+
+  const angleDeg = A * 180 / Math.PI;
+  const kounai = (H / B * 10); // 寸勾配
+
+  rg.innerHTML = `
+    <div class="result-item">
+      <div class="r-label">角度 θ</div>
+      <div class="r-value">${fmt(angleDeg, 2)}<span class="r-unit">°</span></div>
+    </div>
+    <div class="result-item">
+      <div class="r-label">勾配（寸勾配）</div>
+      <div class="r-value">${fmt(kounai, 2)}<span class="r-unit">寸</span></div>
+    </div>
+    <div class="result-item">
+      <div class="r-label">底辺（水平距離）</div>
+      <div class="r-value">${fmt(B)}<span class="r-unit">mm</span></div>
+    </div>
+    <div class="result-item">
+      <div class="r-label">高さ</div>
+      <div class="r-value">${fmt(H)}<span class="r-unit">mm</span></div>
+    </div>
+    <div class="result-item full">
+      <div class="r-label">斜辺（長さ）</div>
+      <div class="r-value">${fmt(L)}<span class="r-unit">mm</span></div>
+    </div>
+  `;
+
+  ex.innerHTML = '📐 計算の仕方：' + explanation;
+  ex.className = 'explanation show';
+}
+
+function showError(rb, rg, msg) {
+  rb.className = 'result-box show error';
+  rg.innerHTML = `<div class="result-main">⚠️ ${msg}</div>`;
+}
+
+function fmt(v, dec = 1) {
+  if (isNaN(v)) return '---';
+  return parseFloat(v.toFixed(dec)).toLocaleString('ja-JP', {maximumFractionDigits: dec});
+}
+
+// ==================== 電卓 ====================
+let calcExpr = '';
+let degMode = 'deg';
+
+function setDegMode(mode) {
+  degMode = mode;
+  document.getElementById('deg-btn').classList.toggle('active', mode === 'deg');
+  document.getElementById('rad-btn').classList.toggle('active', mode === 'rad');
+}
+
+function inputChar(c) {
+  calcExpr += c;
+  document.getElementById('calc-expr').textContent = calcExpr;
+  document.getElementById('calc-val').textContent = calcExpr || '0';
+}
+
+function inputTrig(fn) {
+  calcExpr += fn;
+  document.getElementById('calc-expr').textContent = calcExpr;
+  document.getElementById('calc-val').textContent = calcExpr;
+}
+
+function clearAll() {
+  calcExpr = '';
+  document.getElementById('calc-expr').textContent = '';
+  document.getElementById('calc-val').textContent = '0';
+}
+
+function calculate() {
+  try {
+    let expr = calcExpr
+      .replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-')
+      .replace(/²/g, '**2')
+      .replace(/√\(/g, 'Math.sqrt(');
+
+    if (degMode === 'deg') {
+      expr = expr
+        .replace(/\basin\(/g, 'asinD(')
+        .replace(/\bacos\(/g, 'acosD(')
+        .replace(/\batan\(/g, 'atanD(')
+        .replace(/\bsin\(/g, 'sinD(')
+        .replace(/\bcos\(/g, 'cosD(')
+        .replace(/\btan\(/g, 'tanD(');
+    } else {
+      expr = expr
+        .replace(/\basin\(/g, 'Math.asin(')
+        .replace(/\bacos\(/g, 'Math.acos(')
+        .replace(/\batan\(/g, 'Math.atan(')
+        .replace(/\bsin\(/g, 'Math.sin(')
+        .replace(/\bcos\(/g, 'Math.cos(')
+        .replace(/\btan\(/g, 'Math.tan(');
+    }
+
+    const sinD = x => Math.sin(x * Math.PI / 180);
+    const cosD = x => Math.cos(x * Math.PI / 180);
+    const tanD = x => Math.tan(x * Math.PI / 180);
+    const asinD = x => Math.asin(x) * 180 / Math.PI;
+    const acosD = x => Math.acos(x) * 180 / Math.PI;
+    const atanD = x => Math.atan(x) * 180 / Math.PI;
+
+    const result = eval(expr);
+
+    document.getElementById('calc-expr').textContent = calcExpr + ' =';
+    const disp = (Math.abs(result) > 1e10 || (Math.abs(result) < 1e-6 && result !== 0))
+      ? result.toExponential(6)
+      : parseFloat(result.toFixed(8)).toString();
+    document.getElementById('calc-val').textContent = disp;
+    calcExpr = disp;
+  } catch(e) {
+    document.getElementById('calc-val').textContent = 'エラー';
+    calcExpr = '';
+    setTimeout(() => {
+      document.getElementById('calc-val').textContent = '0';
+    }, 1000);
+  }
+}
+
+// Enterキーで計算
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') calculate();
+  else if (e.key === 'Escape') clearAll();
+});
+</script>
+</body>
+</html>
