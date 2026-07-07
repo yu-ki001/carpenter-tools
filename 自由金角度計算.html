@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自由金 角度計算</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+
+  :root {
+    --ink: #1c1c1e;
+    --bg: #f2f1ed;
+    --metal: #a8b0b8;
+    --metal-dark: #5a6470;
+    --accent: #d4520a;
+    --accent2: #2563c4;
+    --card: #ffffff;
+    --rule: #ddd8d0;
+    --result-big: #d4520a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ヘッダー */
+  header {
+    background: var(--ink);
+    padding: 18px 20px 14px;
+  }
+  .header-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--metal);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  header h1 {
+    font-size: 20px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 0.04em;
+  }
+  header h1 span { color: var(--accent); }
+
+  /* メインカード */
+  .main {
+    padding: 20px 16px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* 図解 */
+  .diagram-card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    border: 1px solid var(--rule);
+  }
+  .diagram-card svg { display: block; margin: 0 auto; }
+  .diagram-note {
+    font-size: 11px;
+    color: #888;
+    text-align: center;
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+
+  /* 入力セクション */
+  .input-card {
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--rule);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .input-card-header {
+    background: var(--metal-dark);
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.1em;
+  }
+  .input-body { padding: 16px; }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--metal-dark);
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+  }
+  .field label .badge {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+  .field label .badge2 {
+    background: var(--accent2);
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  input[type=number] {
+    flex: 1;
+    height: 56px;
+    border: 2px solid var(--rule);
+    border-radius: 8px;
+    padding: 0 16px;
+    font-size: 24px;
+    font-family: inherit;
+    font-weight: 700;
+    background: #fafaf8;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+    -moz-appearance: textfield;
+  }
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  input[type=number]:focus { border-color: var(--metal-dark); background: white; }
+  .unit {
+    font-size: 14px;
+    color: #999;
+    min-width: 20px;
+  }
+
+  /* 腕の長さ共通ボタン */
+  .preset-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .preset-btn {
+    padding: 5px 12px;
+    border: 1.5px solid var(--rule);
+    background: white;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: inherit;
+    color: var(--metal-dark);
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .preset-btn:active, .preset-btn.active {
+    background: var(--metal-dark);
+    color: white;
+    border-color: var(--metal-dark);
+  }
+
+  /* 計算ボタン */
+  .calc-btn {
+    width: 100%;
+    height: 58px;
+    background: var(--accent);
+    color: white;
+    font-size: 18px;
+    font-weight: 900;
+    font-family: inherit;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    transition: background 0.15s, transform 0.1s;
+    margin-bottom: 20px;
+  }
+  .calc-btn:active { background: #b84208; transform: scale(0.98); }
+
+  /* 結果 */
+  .result-card {
+    background: var(--ink);
+    border-radius: 12px;
+    overflow: hidden;
+    display: none;
+  }
+  .result-card.show { display: block; }
+  .result-card-header {
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--metal);
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid #333;
+  }
+
+  .result-main {
+    padding: 20px 16px 8px;
+    text-align: center;
+  }
+  .result-label-sm {
+    font-size: 11px;
+    color: var(--metal);
+    letter-spacing: 0.1em;
+    margin-bottom: 2px;
+  }
+  .result-big {
+    font-size: 64px;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .result-big-unit {
+    font-size: 22px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-left: 4px;
+  }
+  .result-sub-row {
+    display: flex;
+    border-top: 1px solid #333;
+    margin-top: 12px;
+  }
+  .result-sub-item {
+    flex: 1;
+    padding: 14px 12px;
+    text-align: center;
+    border-right: 1px solid #333;
+  }
+  .result-sub-item:last-child { border-right: none; }
+  .result-sub-label {
+    font-size: 10px;
+    color: var(--metal);
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .result-sub-val {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .result-sub-unit {
+    font-size: 11px;
+    color: var(--metal);
+    margin-left: 2px;
+  }
+
+  /* 丸鋸セットの補足 */
+  .saw-note {
+    background: #1e2530;
+    padding: 12px 16px;
+    font-size: 11px;
+    color: #a0a8b0;
+    line-height: 1.7;
+  }
+  .saw-note strong { color: var(--accent); }
+
+  .error {
+    background: #fff0ee;
+    border: 1.5px solid #f5a090;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #c0392b;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .error.show { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-label">大工の現場計算</div>
+  <h1>自由金 <span>角度</span> 計算</h1>
+</header>
+
+<div class="main">
+
+  <!-- 図解 -->
+  <div class="diagram-card">
+    <svg id="diagram" viewBox="0 0 280 155" fill="none" xmlns="http://www.w3.org/2000/svg" width="280" height="155">
+      <!-- 自由金のイメージ（二等辺三角形） -->
+      <!-- 左腕 -->
+      <line id="arm_l" x1="90" y1="130" x2="30" y2="35" stroke="#a8b0b8" stroke-width="8" stroke-linecap="round"/>
+      <!-- 右腕 -->
+      <line id="arm_r" x1="90" y1="130" x2="150" y2="35" stroke="#a8b0b8" stroke-width="4" stroke-linecap="round"/>
+      <!-- 底辺（底辺D） -->
+      <line x1="30" y1="35" x2="150" y1="35" y2="35" stroke="#d4520a" stroke-width="2.5" stroke-dasharray="none"/>
+      <!-- 矢印（底辺） -->
+      <line x1="30" y1="22" x2="150" y2="22" stroke="#d4520a" stroke-width="1.5"/>
+      <polygon points="30,19 36,22 30,25" fill="#d4520a"/>
+      <polygon points="150,19 144,22 150,25" fill="#d4520a"/>
+      <text x="90" y="18" text-anchor="middle" font-size="12" fill="#d4520a" font-weight="bold">D（底辺）</text>
+      <!-- 腕の長さL -->
+      <text x="50" y="95" text-anchor="middle" font-size="11" fill="#5a6470" font-weight="bold">L</text>
+      <text x="135" y="95" text-anchor="middle" font-size="11" fill="#5a6470" font-weight="bold">L</text>
+      <!-- 角度マーク -->
+      <path d="M 90 130 m 0 -22 a 22 22 0 0 1 -14 -16" stroke="#fff" stroke-width="1.5" fill="none"/>
+      <text x="90" y="148" text-anchor="middle" font-size="10" fill="#5a6470">支点</text>
+      <!-- 角度θ -->
+      <text x="90" y="120" text-anchor="middle" font-size="11" fill="#888">θ</text>
+    </svg>
+    <p class="diagram-note">
+      自由金の両腕を<strong>同じ長さ（L）</strong>に合わせて壁と天井に当てる<br>
+      開いた底辺（D）を測って入力するだけ
+    </p>
+  </div>
+
+  <!-- 入力 -->
+  <div class="input-card">
+    <div class="input-card-header">📐 測定値を入力</div>
+    <div class="input-body">
+
+      <div class="field">
+        <label><span class="badge">L</span> 腕の長さ（自由金の1辺）</label>
+        <div class="input-row">
+          <input type="number" id="inp_L" placeholder="例: 300" inputmode="decimal" oninput="liveCalc()">
+          <span class="unit">mm</span>
+        </div>
+        <div class="preset-row" id="presets">
+          <button class="preset-btn" onclick="setL(200)">200</button>
+          <button class="preset-btn" onclick="setL(250)">250</button>
+          <button class="preset-btn" onclick="setL(300)">300</button>
+          <button class="preset-btn" onclick="setL(350)">350</button>
+          <button class="preset-btn" onclick="setL(450)">450</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label><span class="badge2">D</span> 底辺の長さ（開いた幅）</label>
+        <div class="input-row">
+          <input type="number" id="inp_D" placeholder="例: 420" inputmode="decimal" oninput="liveCalc()">
+          <span class="unit">mm</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="error" id="err_msg"></div>
+
+  <button class="calc-btn" onclick="calc()">角度を計算する</button>
+
+  <!-- 結果 -->
+  <div class="result-card" id="result_card">
+    <div class="result-card-header">計算結果</div>
+    <div class="result-main">
+      <div class="result-label-sm">留め切り角度（÷2）</div>
+      <div>
+        <span class="result-big" id="res_half">—</span><span class="result-big-unit">°</span>
+      </div>
+    </div>
+    <div class="result-sub-row">
+      <div class="result-sub-item">
+        <div class="result-sub-label">壁と天井の角度</div>
+        <div><span class="result-sub-val" id="res_full">—</span><span class="result-sub-unit">°</span></div>
+      </div>
+      <div class="result-sub-item">
+        <div class="result-sub-label">丸鋸ベベル角</div>
+        <div><span class="result-sub-val" id="res_bevel">—</span><span class="result-sub-unit">°</span></div>
+      </div>
+      <div class="result-sub-item">
+        <div class="result-sub-label">90°との差</div>
+        <div><span class="result-sub-val" id="res_diff">—</span><span class="result-sub-unit">°</span></div>
+      </div>
+    </div>
+    <div class="saw-note" id="saw_note">—</div>
+  </div>
+
+</div>
+
+<script>
+function setL(v) {
+  document.getElementById('inp_L').value = v;
+  document.querySelectorAll('.preset-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.textContent) === v);
+  });
+  liveCalc();
+}
+
+function fmt1(v) {
+  return v.toFixed(1).replace(/\.0$/, '');
+}
+
+function showError(msg) {
+  const el = document.getElementById('err_msg');
+  el.textContent = msg;
+  el.classList.add('show');
+  document.getElementById('result_card').classList.remove('show');
+}
+function clearError() {
+  document.getElementById('err_msg').classList.remove('show');
+}
+
+function doCalc(L, D) {
+  // 二等辺三角形の頂角を求める
+  // cos(θ/2) = (D/2) / L  → θ/2 = acos(D/(2L))
+  // 全角 θ = 2 * acos(D/(2L))
+  const half = Math.acos(D / (2 * L)) * 180 / Math.PI; // θ/2 の補角ではなく直接
+  // 実際の計算: 頂角θ = 2*asin((D/2)/L)
+  const theta = 2 * Math.asin((D / 2) / L) * 180 / Math.PI; // 開き角
+  const wallAngle = 180 - theta; // 壁と天井の内角
+  const miter = wallAngle / 2;   // 留め切り角度
+  const bevel = 90 - miter;      // 丸鋸のベベル角
+  const diff = 90 - wallAngle;   // 直角との差
+  return { theta, wallAngle, miter, bevel, diff };
+}
+
+function liveCalc() {
+  clearError();
+  const L = parseFloat(document.getElementById('inp_L').value);
+  const D = parseFloat(document.getElementById('inp_D').value);
+  if (!L || !D || L <= 0 || D <= 0) return;
+  if (D >= 2 * L) return;
+  const r = doCalc(L, D);
+  updateResult(r);
+}
+
+function calc() {
+  clearError();
+  const L = parseFloat(document.getElementById('inp_L').value);
+  const D = parseFloat(document.getElementById('inp_D').value);
+  if (!L || L <= 0) { showError('腕の長さ L を入力してください'); return; }
+  if (!D || D <= 0) { showError('底辺の長さ D を入力してください'); return; }
+  if (D >= 2 * L) { showError('底辺DはL×2（' + (2*L) + 'mm）より小さくしてください'); return; }
+  const r = doCalc(L, D);
+  updateResult(r);
+}
+
+function updateResult(r) {
+  document.getElementById('res_half').textContent = fmt1(r.miter);
+  document.getElementById('res_full').textContent = fmt1(r.wallAngle);
+  document.getElementById('res_bevel').textContent = fmt1(Math.abs(r.bevel));
+  document.getElementById('res_diff').textContent = (r.diff >= 0 ? '+' : '') + fmt1(r.diff);
+
+  // 鋸のセット説明
+  let note = '';
+  const m = r.miter;
+  if (Math.abs(r.wallAngle - 90) < 0.3) {
+    note = '✅ ほぼ直角（90°）です。通常の45°留めで切れます。';
+  } else if (r.wallAngle > 90) {
+    note = `⚠️ 角度が鈍角（${fmt1(r.wallAngle)}°）です。\n丸鋸のマイター角を <strong>${fmt1(m)}°</strong> にセット。\n90°より広い分、留め切り角は45°より小さくなります。`;
+  } else {
+    note = `⚠️ 角度が鋭角（${fmt1(r.wallAngle)}°）です。\n丸鋸のマイター角を <strong>${fmt1(m)}°</strong> にセット。\n90°より狭い分、留め切り角は45°より大きくなります。`;
+  }
+  document.getElementById('saw_note').innerHTML = note.replace(/\n/g, '<br>');
+  document.getElementById('result_card').classList.add('show');
+}
+
+// Enterキー対応
+document.addEventListener('keydown', e => { if (e.key === 'Enter') calc(); });
+</script>
+</body>
+</html>
