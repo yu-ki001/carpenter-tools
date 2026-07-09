@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>間柱本数 計算</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+
+  :root {
+    --ink: #1c1c1e;
+    --bg: #f0ede8;
+    --wood: #8b6f47;
+    --wood-dark: #4a3520;
+    --wood-light: #c49a6c;
+    --accent: #d4520a;
+    --card: #ffffff;
+    --rule: #ddd8cf;
+    --green: #2a7a4b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* ヘッダー */
+  header {
+    background: var(--wood-dark);
+    padding: 18px 20px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::after {
+    content: '|||||||||||||||||||||||||||||||';
+    position: absolute;
+    right: -10px; top: -4px;
+    font-size: 28px;
+    letter-spacing: -6px;
+    color: rgba(255,255,255,0.06);
+    pointer-events: none;
+  }
+  .header-label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--wood-light);
+    margin-bottom: 3px;
+  }
+  header h1 {
+    font-size: 22px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 0.03em;
+  }
+  header h1 span { color: var(--accent); }
+
+  .main {
+    padding: 20px 16px;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  /* ピッチ選択 */
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--wood);
+    margin-bottom: 10px;
+    padding-left: 2px;
+  }
+
+  .pitch-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .pitch-btn {
+    flex: 1;
+    min-width: 70px;
+    padding: 12px 8px;
+    border: 2px solid var(--rule);
+    background: var(--card);
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    color: #888;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    line-height: 1.2;
+  }
+  .pitch-btn small {
+    display: block;
+    font-size: 10px;
+    font-weight: 400;
+    color: #bbb;
+    margin-top: 2px;
+  }
+  .pitch-btn.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: white;
+  }
+  .pitch-btn.active small { color: rgba(255,255,255,0.75); }
+
+  /* カスタムピッチ */
+  .custom-pitch-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .custom-pitch-row input {
+    width: 110px;
+    height: 44px;
+    border: 2px solid var(--rule);
+    border-radius: 8px;
+    padding: 0 12px;
+    font-size: 18px;
+    font-weight: 700;
+    font-family: inherit;
+    background: var(--card);
+    color: var(--ink);
+    outline: none;
+    -moz-appearance: textfield;
+  }
+  .custom-pitch-row input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .custom-pitch-row input:focus { border-color: var(--wood); }
+  .custom-pitch-row span { font-size: 13px; color: #888; }
+  .custom-pitch-row .apply-btn {
+    padding: 10px 16px;
+    background: var(--wood-dark);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  /* 壁面リスト */
+  .walls-list { margin-bottom: 12px; }
+
+  .wall-item {
+    background: var(--card);
+    border: 1.5px solid var(--rule);
+    border-radius: 10px;
+    padding: 14px 14px 12px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .wall-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .wall-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--wood-dark);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .wall-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: var(--wood-dark);
+    color: white;
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 900;
+  }
+  .wall-name input.name-input {
+    border: none;
+    border-bottom: 1.5px solid var(--rule);
+    background: transparent;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--wood-dark);
+    outline: none;
+    width: 120px;
+    padding: 2px 4px;
+  }
+  .del-btn {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+    transition: color 0.1s;
+  }
+  .del-btn:hover { color: var(--accent); }
+
+  .wall-inputs {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .wall-field {
+    flex: 1;
+  }
+  .wall-field label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    color: #999;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .wall-field input {
+    width: 100%;
+    height: 50px;
+    border: 2px solid var(--rule);
+    border-radius: 8px;
+    padding: 0 12px;
+    font-size: 22px;
+    font-weight: 700;
+    font-family: inherit;
+    background: #fafaf8;
+    color: var(--ink);
+    outline: none;
+    -moz-appearance: textfield;
+    transition: border-color 0.15s;
+  }
+  .wall-field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .wall-field input:focus { border-color: var(--wood); background: white; }
+  .wall-field .unit {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 3px;
+    padding-left: 2px;
+  }
+
+  /* 壁追加ボタン */
+  .add-wall-btn {
+    width: 100%;
+    height: 46px;
+    border: 2px dashed var(--rule);
+    background: transparent;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--wood-light);
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: all 0.15s;
+  }
+  .add-wall-btn:hover { border-color: var(--wood); color: var(--wood); }
+
+  /* 計算ボタン */
+  .calc-btn {
+    width: 100%;
+    height: 60px;
+    background: var(--accent);
+    color: white;
+    font-size: 18px;
+    font-weight: 900;
+    font-family: inherit;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    margin-bottom: 24px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .calc-btn:active { background: #b84208; transform: scale(0.98); }
+
+  /* 結果 */
+  .result-area { display: none; }
+  .result-area.show { display: block; }
+
+  .result-total-card {
+    background: var(--wood-dark);
+    border-radius: 14px;
+    padding: 20px 20px 16px;
+    margin-bottom: 16px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .result-total-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--accent);
+  }
+  .result-total-label {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--wood-light);
+    margin-bottom: 4px;
+  }
+  .result-total-num {
+    font-size: 72px;
+    font-weight: 900;
+    color: white;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .result-total-unit {
+    font-size: 20px;
+    color: var(--wood-light);
+    margin-left: 4px;
+  }
+  .result-total-pitch {
+    font-size: 12px;
+    color: var(--wood-light);
+    margin-top: 8px;
+    opacity: 0.8;
+  }
+
+  /* 壁別結果 */
+  .result-walls {
+    background: var(--card);
+    border-radius: 12px;
+    border: 1.5px solid var(--rule);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .result-walls-header {
+    background: var(--wood);
+    padding: 9px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 0.1em;
+  }
+  .result-wall-row {
+    display: flex;
+    align-items: center;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--rule);
+    gap: 10px;
+  }
+  .result-wall-row:last-child { border-bottom: none; }
+  .result-wall-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--wood-dark);
+    flex: 1;
+  }
+  .result-wall-len {
+    font-size: 12px;
+    color: #999;
+    min-width: 70px;
+    text-align: right;
+  }
+  .result-wall-count {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--accent);
+    min-width: 60px;
+    text-align: right;
+  }
+  .result-wall-count-unit {
+    font-size: 12px;
+    color: #aaa;
+  }
+
+  /* 材料メモ */
+  .memo-card {
+    background: #f0f7f3;
+    border: 1.5px solid #b2d8c0;
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .memo-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .memo-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #333;
+    padding: 4px 0;
+    border-bottom: 1px solid #d0eada;
+  }
+  .memo-row:last-child { border-bottom: none; }
+  .memo-row strong { color: var(--green); font-weight: 900; }
+
+  .error {
+    background: #fff0ee;
+    border: 1.5px solid #f5a090;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #c0392b;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .error.show { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-label">大工の現場計算</div>
+  <h1>間柱 <span>本数</span> 計算</h1>
+</header>
+
+<div class="main">
+
+  <!-- ピッチ選択 -->
+  <div class="section-label">STEP 1　ピッチを選ぶ</div>
+  <div class="pitch-row">
+    <button class="pitch-btn active" onclick="setPitch(303, this)">303<small>mm</small></button>
+    <button class="pitch-btn" onclick="setPitch(455, this)">455<small>mm</small></button>
+    <button class="pitch-btn" onclick="setPitch(500, this)">500<small>mm</small></button>
+    <button class="pitch-btn" onclick="setPitch(606, this)">606<small>mm</small></button>
+    <button class="pitch-btn" onclick="setPitch(910, this)">910<small>mm</small></button>
+  </div>
+
+  <div class="custom-pitch-row">
+    <input type="number" id="custom_pitch" placeholder="その他" inputmode="numeric">
+    <span>mm</span>
+    <button class="apply-btn" onclick="applyCustom()">適用</button>
+  </div>
+
+  <!-- 壁面リスト -->
+  <div class="section-label">STEP 2　壁面を入力</div>
+  <div class="walls-list" id="walls_list"></div>
+  <button class="add-wall-btn" onclick="addWall()">＋ 壁面を追加</button>
+
+  <div class="error" id="err_msg"></div>
+
+  <button class="calc-btn" onclick="calc()">本数を計算する</button>
+
+  <!-- 結果 -->
+  <div class="result-area" id="result_area">
+    <div class="result-total-card">
+      <div class="result-total-label">全壁面　合計本数</div>
+      <div>
+        <span class="result-total-num" id="res_total">0</span><span class="result-total-unit">本</span>
+      </div>
+      <div class="result-total-pitch" id="res_pitch_label">— mm ピッチ</div>
+    </div>
+
+    <div class="result-walls" id="res_walls"></div>
+
+    <div class="memo-card">
+      <div class="memo-title">📋 材料メモ</div>
+      <div class="memo-row"><span>ピッチ</span><strong id="memo_pitch">—</strong></div>
+      <div class="memo-row"><span>壁面数</span><strong id="memo_faces">—</strong></div>
+      <div class="memo-row"><span>合計延長</span><strong id="memo_total_len">—</strong></div>
+      <div class="memo-row"><span>合計本数</span><strong id="memo_total">—</strong></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let currentPitch = 303;
+let wallCount = 0;
+
+// 初期壁面を2枚追加
+addWall();
+addWall();
+
+function setPitch(p, btn) {
+  currentPitch = p;
+  document.querySelectorAll('.pitch-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('custom_pitch').value = '';
+}
+
+function applyCustom() {
+  const v = parseInt(document.getElementById('custom_pitch').value);
+  if (!v || v <= 0) return;
+  currentPitch = v;
+  document.querySelectorAll('.pitch-btn').forEach(b => b.classList.remove('active'));
+}
+
+function addWall() {
+  wallCount++;
+  const list = document.getElementById('walls_list');
+  const div = document.createElement('div');
+  div.className = 'wall-item';
+  div.dataset.id = wallCount;
+  div.innerHTML = `
+    <div class="wall-item-header">
+      <div class="wall-name">
+        <span class="wall-num">${wallCount}</span>
+        <input class="name-input" type="text" value="${wallLabel(wallCount)}" placeholder="壁面名">
+      </div>
+      <button class="del-btn" onclick="delWall(this)">×</button>
+    </div>
+    <div class="wall-inputs">
+      <div class="wall-field">
+        <label>壁の長さ</label>
+        <input type="number" placeholder="例: 3640" inputmode="decimal">
+        <div class="unit">mm</div>
+      </div>
+      <div class="wall-field" style="max-width:90px;">
+        <label>端の柱</label>
+        <input type="number" placeholder="2" inputmode="numeric" value="2" min="0">
+        <div class="unit">本（両端）</div>
+      </div>
+    </div>
+  `;
+  list.appendChild(div);
+  // 最初の入力にフォーカス
+  div.querySelector('input[type=number]').focus();
+}
+
+function wallLabel(n) {
+  const labels = ['北面', '南面', '東面', '西面', 'A面', 'B面', 'C面', 'D面'];
+  return labels[n-1] || `壁面${n}`;
+}
+
+function delWall(btn) {
+  const item = btn.closest('.wall-item');
+  if (document.querySelectorAll('.wall-item').length <= 1) return;
+  item.remove();
+}
+
+function calc() {
+  const err = document.getElementById('err_msg');
+  err.classList.remove('show');
+
+  const items = document.querySelectorAll('.wall-item');
+  if (items.length === 0) { showErr('壁面を1面以上入力してください'); return; }
+
+  const pitch = currentPitch;
+  if (!pitch || pitch <= 0) { showErr('ピッチを選択してください'); return; }
+
+  let totalCount = 0;
+  let totalLen = 0;
+  let wallResults = [];
+  let hasError = false;
+
+  items.forEach(item => {
+    const name = item.querySelector('.name-input').value || '壁面';
+    const inputs = item.querySelectorAll('input[type=number]');
+    const len = parseFloat(inputs[0].value);
+    const endPosts = parseInt(inputs[1].value) || 0;
+
+    if (!len || len <= 0) { hasError = true; return; }
+
+    // ピッチ割り: 両端の柱を除いた長さを割る
+    // 間柱の本数 = 床・壁の長さ / ピッチ - 1（端柱は別）
+    // 一般的な考え方: スパン数 = ceil(長さ / ピッチ)、間柱 = スパン数 - 1
+    const spans = Math.ceil(len / pitch);
+    const mabasira = spans - 1; // 間柱（端柱除く）
+    const total = mabasira + endPosts;
+
+    totalCount += total;
+    totalLen += len;
+    wallResults.push({ name, len, spans, mabasira, endPosts, total });
+  });
+
+  if (hasError) { showErr('長さが未入力の壁面があります'); return; }
+  if (wallResults.length === 0) { showErr('有効な壁面がありません'); return; }
+
+  // 結果表示
+  document.getElementById('res_total').textContent = totalCount;
+  document.getElementById('res_pitch_label').textContent = pitch + ' mm ピッチ';
+
+  // 壁別
+  let wallHtml = '<div class="result-walls-header">壁面別　内訳</div>';
+  wallResults.forEach(w => {
+    wallHtml += `
+      <div class="result-wall-row">
+        <div>
+          <div class="result-wall-name">${w.name}</div>
+          <div style="font-size:11px;color:#aaa;margin-top:2px;">
+            ${w.len.toLocaleString()}mm　／　間柱${w.mabasira}本 ＋ 端柱${w.endPosts}本
+          </div>
+        </div>
+        <div class="result-wall-count">${w.total}<span class="result-wall-count-unit">本</span></div>
+      </div>
+    `;
+  });
+  document.getElementById('res_walls').innerHTML = wallHtml;
+
+  // メモ
+  document.getElementById('memo_pitch').textContent = pitch + ' mm';
+  document.getElementById('memo_faces').textContent = wallResults.length + ' 面';
+  document.getElementById('memo_total_len').textContent = (totalLen / 1000).toFixed(2) + ' m';
+  document.getElementById('memo_total').textContent = totalCount + ' 本';
+
+  document.getElementById('result_area').classList.add('show');
+  document.getElementById('result_area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showErr(msg) {
+  const el = document.getElementById('err_msg');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>平米・坪 計算</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+
+  :root {
+    --ink: #1c1c1e;
+    --bg: #f0ede8;
+    --wood: #8b6f47;
+    --wood-dark: #4a3520;
+    --wood-light: #c49a6c;
+    --accent: #d4520a;
+    --accent2: #2563c4;
+    --card: #ffffff;
+    --rule: #ddd8cf;
+    --green: #2a7a4b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding-bottom: 48px;
+  }
+
+  header {
+    background: var(--wood-dark);
+    padding: 18px 20px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::after {
+    content: '▨▨▨▨▨▨▨▨▨▨▨▨▨▨';
+    position: absolute;
+    right: -4px; top: 6px;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.05);
+    pointer-events: none;
+  }
+  .header-label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--wood-light);
+    margin-bottom: 3px;
+  }
+  header h1 {
+    font-size: 22px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 0.03em;
+  }
+  header h1 span { color: var(--accent); }
+
+  .main {
+    padding: 20px 16px;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--wood);
+    margin-bottom: 10px;
+  }
+
+  /* モード切替 */
+  .mode-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 22px;
+  }
+  .mode-btn {
+    flex: 1;
+    padding: 13px 8px;
+    border: 2px solid var(--rule);
+    background: var(--card);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    color: #999;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    line-height: 1.3;
+  }
+  .mode-btn small {
+    display: block;
+    font-size: 10px;
+    font-weight: 400;
+    color: #ccc;
+    margin-top: 2px;
+  }
+  .mode-btn.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: white;
+  }
+  .mode-btn.active small { color: rgba(255,255,255,0.7); }
+
+  /* 入力カード */
+  .input-card {
+    background: var(--card);
+    border-radius: 12px;
+    border: 1.5px solid var(--rule);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .input-card-header {
+    background: var(--wood);
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.1em;
+  }
+  .input-body { padding: 16px; }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--wood-dark);
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+  }
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  input[type=number] {
+    flex: 1;
+    height: 54px;
+    border: 2px solid var(--rule);
+    border-radius: 8px;
+    padding: 0 16px;
+    font-size: 24px;
+    font-weight: 700;
+    font-family: inherit;
+    background: #fafaf8;
+    color: var(--ink);
+    outline: none;
+    -moz-appearance: textfield;
+    transition: border-color 0.15s;
+  }
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  input[type=number]:focus { border-color: var(--wood); background: white; }
+  .unit {
+    font-size: 14px;
+    color: #999;
+    min-width: 28px;
+  }
+
+  /* 単位切替（mm/m/尺） */
+  .unit-toggle {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .unit-toggle-btn {
+    padding: 5px 12px;
+    border: 1.5px solid var(--rule);
+    background: white;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    color: #999;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .unit-toggle-btn.active {
+    background: var(--wood-dark);
+    color: white;
+    border-color: var(--wood-dark);
+  }
+
+  /* 計算ボタン */
+  .calc-btn {
+    width: 100%;
+    height: 58px;
+    background: var(--accent);
+    color: white;
+    font-size: 18px;
+    font-weight: 900;
+    font-family: inherit;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    margin-bottom: 22px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .calc-btn:active { background: #b84208; transform: scale(0.98); }
+
+  /* 結果 */
+  .result-area { display: none; }
+  .result-area.show { display: block; }
+
+  .result-main-card {
+    background: var(--wood-dark);
+    border-radius: 14px;
+    padding: 22px 20px 18px;
+    margin-bottom: 14px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .result-main-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--accent);
+  }
+  .result-twin {
+    display: flex;
+    gap: 0;
+  }
+  .result-half {
+    flex: 1;
+    padding: 4px 8px;
+  }
+  .result-half + .result-half {
+    border-left: 1px solid rgba(255,255,255,0.1);
+  }
+  .result-rl {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--wood-light);
+    margin-bottom: 2px;
+  }
+  .result-big {
+    font-size: 48px;
+    font-weight: 900;
+    color: white;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .result-big-unit {
+    font-size: 16px;
+    color: var(--wood-light);
+    margin-left: 3px;
+    font-weight: 700;
+  }
+
+  /* サブ結果 */
+  .result-sub-card {
+    background: var(--card);
+    border: 1.5px solid var(--rule);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .result-sub-header {
+    background: var(--wood);
+    padding: 8px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 0.1em;
+  }
+  .result-sub-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .result-sub-row:last-child { border-bottom: none; }
+  .result-sub-label { font-size: 12px; color: #888; }
+  .result-sub-val {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .result-sub-unit-sm { font-size: 12px; color: #aaa; margin-left: 3px; }
+
+  /* 部屋リスト */
+  .room-list { margin-bottom: 12px; }
+  .room-item {
+    background: var(--card);
+    border: 1.5px solid var(--rule);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .room-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .room-name-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .room-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px; height: 20px;
+    background: var(--wood-dark);
+    color: white;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 900;
+  }
+  .room-name-input {
+    border: none;
+    border-bottom: 1.5px solid var(--rule);
+    background: transparent;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--wood-dark);
+    outline: none;
+    width: 100px;
+    padding: 2px 4px;
+  }
+  .room-del {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 4px;
+    transition: color 0.1s;
+  }
+  .room-del:hover { color: var(--accent); }
+  .room-dims {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .room-dims input {
+    flex: 1;
+    height: 48px;
+    border: 2px solid var(--rule);
+    border-radius: 8px;
+    padding: 0 10px;
+    font-size: 20px;
+    font-weight: 700;
+    font-family: inherit;
+    background: #fafaf8;
+    color: var(--ink);
+    outline: none;
+    -moz-appearance: textfield;
+    transition: border-color 0.15s;
+  }
+  .room-dims input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .room-dims input:focus { border-color: var(--wood); background: white; }
+  .dim-x { font-size: 18px; color: #aaa; font-weight: 700; }
+  .dim-unit { font-size: 12px; color: #aaa; min-width: 24px; }
+
+  .add-room-btn {
+    width: 100%;
+    height: 44px;
+    border: 2px dashed var(--rule);
+    background: transparent;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--wood-light);
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: all 0.15s;
+  }
+  .add-room-btn:hover { border-color: var(--wood); color: var(--wood); }
+
+  /* 合計結果（部屋リスト用） */
+  .multi-result-card {
+    background: var(--wood-dark);
+    border-radius: 14px;
+    padding: 18px 20px 16px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .multi-result-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--accent);
+  }
+  .multi-total-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--wood-light);
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .multi-twin {
+    display: flex;
+    gap: 0;
+    text-align: center;
+  }
+  .multi-half {
+    flex: 1;
+    padding: 4px 8px;
+  }
+  .multi-half + .multi-half { border-left: 1px solid rgba(255,255,255,0.12); }
+  .multi-rl { font-size: 10px; color: var(--wood-light); margin-bottom: 2px; }
+  .multi-big {
+    font-size: 44px;
+    font-weight: 900;
+    color: white;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .multi-big-unit { font-size: 15px; color: var(--wood-light); margin-left: 3px; }
+
+  .multi-rooms-card {
+    background: var(--card);
+    border: 1.5px solid var(--rule);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .multi-rooms-header {
+    background: var(--wood);
+    padding: 8px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 0.1em;
+  }
+  .multi-room-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--rule);
+    gap: 8px;
+  }
+  .multi-room-row:last-child { border-bottom: none; }
+  .multi-room-name { font-size: 13px; font-weight: 700; color: var(--wood-dark); flex: 1; }
+  .multi-room-dim { font-size: 11px; color: #aaa; }
+  .multi-room-vals { text-align: right; }
+  .multi-room-m2 { font-size: 16px; font-weight: 700; color: var(--accent); }
+  .multi-room-tsubo { font-size: 12px; color: #888; margin-top: 1px; }
+
+  .error {
+    background: #fff0ee;
+    border: 1.5px solid #f5a090;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #c0392b;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .error.show { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-label">大工の現場計算</div>
+  <h1>平米 <span>·</span> 坪 計算</h1>
+</header>
+
+<div class="main">
+
+  <!-- モード切替 -->
+  <div class="section-label">計算モードを選ぶ</div>
+  <div class="mode-row">
+    <button class="mode-btn active" onclick="setMode('single', this)">1部屋<small>縦×横で計算</small></button>
+    <button class="mode-btn" onclick="setMode('multi', this)">複数部屋<small>合計を出す</small></button>
+    <button class="mode-btn" onclick="setMode('convert', this)">単位変換<small>平米⇔坪</small></button>
+  </div>
+
+  <!-- シングルモード -->
+  <div id="mode_single">
+    <div class="input-card">
+      <div class="input-card-header">📐 寸法を入力</div>
+      <div class="input-body">
+        <div class="field">
+          <label>縦（奥行き）</label>
+          <div class="input-row">
+            <input type="number" id="s_h" placeholder="例: 3640" inputmode="decimal" oninput="singleLive()">
+            <span class="unit" id="s_unit1">mm</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>横（幅）</label>
+          <div class="input-row">
+            <input type="number" id="s_w" placeholder="例: 2730" inputmode="decimal" oninput="singleLive()">
+            <span class="unit" id="s_unit2">mm</span>
+          </div>
+        </div>
+        <div class="unit-toggle">
+          <button class="unit-toggle-btn active" onclick="setSUnit('mm',this)">mm</button>
+          <button class="unit-toggle-btn" onclick="setSUnit('m',this)">m</button>
+          <button class="unit-toggle-btn" onclick="setSUnit('shaku',this)">尺</button>
+        </div>
+      </div>
+    </div>
+    <div class="error" id="s_err"></div>
+    <button class="calc-btn" onclick="calcSingle()">計 算</button>
+    <div class="result-area" id="s_result"></div>
+  </div>
+
+  <!-- マルチモード -->
+  <div id="mode_multi" style="display:none">
+    <div class="room-list" id="room_list"></div>
+    <button class="add-room-btn" onclick="addRoom()">＋ 部屋を追加</button>
+    <div class="unit-toggle" style="margin-bottom:16px;">
+      <span style="font-size:12px;color:#888;margin-right:8px;">入力単位：</span>
+      <button class="unit-toggle-btn active" onclick="setMUnit('mm',this)">mm</button>
+      <button class="unit-toggle-btn" onclick="setMUnit('m',this)">m</button>
+      <button class="unit-toggle-btn" onclick="setMUnit('shaku',this)">尺</button>
+    </div>
+    <div class="error" id="m_err"></div>
+    <button class="calc-btn" onclick="calcMulti()">合計を計算する</button>
+    <div class="result-area" id="m_result"></div>
+  </div>
+
+  <!-- 変換モード -->
+  <div id="mode_convert" style="display:none">
+    <div class="input-card">
+      <div class="input-card-header">🔄 変換する値を入力</div>
+      <div class="input-body">
+        <div class="field">
+          <label>平米（㎡）→ 坪に変換</label>
+          <div class="input-row">
+            <input type="number" id="c_m2" placeholder="例: 85.5" inputmode="decimal" oninput="convertLive()">
+            <span class="unit">㎡</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>坪 → 平米（㎡）に変換</label>
+          <div class="input-row">
+            <input type="number" id="c_tsubo" placeholder="例: 25.8" inputmode="decimal" oninput="convertLive()">
+            <span class="unit">坪</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="result-area show" id="c_result">
+      <div class="result-sub-card">
+        <div class="result-sub-header">変換結果</div>
+        <div class="result-sub-row">
+          <span class="result-sub-label">㎡ → 坪</span>
+          <span><span class="result-sub-val" id="c_to_tsubo">—</span><span class="result-sub-unit-sm">坪</span></span>
+        </div>
+        <div class="result-sub-row">
+          <span class="result-sub-label">坪 → ㎡</span>
+          <span><span class="result-sub-val" id="c_to_m2">—</span><span class="result-sub-unit-sm">㎡</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// 定数
+const TSUBO = 3.30578; // 1坪 = 3.30578㎡
+
+let currentMode = 'single';
+let sUnit = 'mm';
+let mUnit = 'mm';
+let roomCount = 0;
+
+// 初期部屋
+addRoom(); addRoom();
+
+function setMode(m, btn) {
+  currentMode = m;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['single','multi','convert'].forEach(id => {
+    document.getElementById('mode_' + id).style.display = id === m ? '' : 'none';
+  });
+}
+
+// 単位変換
+function toM(v, unit) {
+  if (unit === 'mm') return v / 1000;
+  if (unit === 'm') return v;
+  if (unit === 'shaku') return v * 0.30303;
+  return v;
+}
+
+function setSUnit(u, btn) {
+  sUnit = u;
+  document.querySelectorAll('#mode_single .unit-toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('s_unit1').textContent = u === 'shaku' ? '尺' : u;
+  document.getElementById('s_unit2').textContent = u === 'shaku' ? '尺' : u;
+}
+function setMUnit(u, btn) {
+  mUnit = u;
+  document.querySelectorAll('#mode_multi .unit-toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.dim-unit').forEach(el => {
+    el.textContent = u === 'shaku' ? '尺' : u;
+  });
+}
+
+function fmt(v, d=2) {
+  return parseFloat(v.toFixed(d)).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: d});
+}
+
+// ===== シングルモード =====
+function singleLive() {
+  const h = parseFloat(document.getElementById('s_h').value);
+  const w = parseFloat(document.getElementById('s_w').value);
+  if (!h || !w || h<=0 || w<=0) return;
+  const m2 = toM(h, sUnit) * toM(w, sUnit);
+  showSingleResult(m2, h, w);
+}
+
+function calcSingle() {
+  const h = parseFloat(document.getElementById('s_h').value);
+  const w = parseFloat(document.getElementById('s_w').value);
+  const err = document.getElementById('s_err');
+  err.classList.remove('show');
+  if (!h || !w || h<=0 || w<=0) { err.textContent='縦と横を入力してください'; err.classList.add('show'); return; }
+  const m2 = toM(h, sUnit) * toM(w, sUnit);
+  showSingleResult(m2, h, w);
+}
+
+function showSingleResult(m2, h, w) {
+  const tsubo = m2 / TSUBO;
+  const el = document.getElementById('s_result');
+  el.innerHTML = `
+    <div class="result-main-card">
+      <div class="result-twin">
+        <div class="result-half">
+          <div class="result-rl">面積</div>
+          <div><span class="result-big">${fmt(m2)}</span><span class="result-big-unit">㎡</span></div>
+        </div>
+        <div class="result-half">
+          <div class="result-rl">坪数</div>
+          <div><span class="result-big">${fmt(tsubo)}</span><span class="result-big-unit">坪</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="result-sub-card">
+      <div class="result-sub-header">詳細</div>
+      <div class="result-sub-row">
+        <span class="result-sub-label">縦 × 横</span>
+        <span class="result-sub-val" style="font-size:15px;color:#888;">${h} × ${w} ${sUnit==='shaku'?'尺':sUnit}</span>
+      </div>
+      <div class="result-sub-row">
+        <span class="result-sub-label">㎡（平米）</span>
+        <span><span class="result-sub-val">${fmt(m2, 4)}</span><span class="result-sub-unit-sm">㎡</span></span>
+      </div>
+      <div class="result-sub-row">
+        <span class="result-sub-label">坪</span>
+        <span><span class="result-sub-val">${fmt(tsubo, 4)}</span><span class="result-sub-unit-sm">坪</span></span>
+      </div>
+      <div class="result-sub-row">
+        <span class="result-sub-label">畳（約）</span>
+        <span><span class="result-sub-val">${fmt(m2 / 1.62, 1)}</span><span class="result-sub-unit-sm">帖</span></span>
+      </div>
+    </div>
+  `;
+  el.classList.add('show');
+}
+
+// ===== マルチモード =====
+const roomNames = ['リビング','キッチン','主寝室','子供部屋','和室','洗面室','浴室','玄関'];
+
+function addRoom() {
+  roomCount++;
+  const list = document.getElementById('room_list');
+  const div = document.createElement('div');
+  div.className = 'room-item';
+  div.dataset.id = roomCount;
+  const unitLabel = mUnit === 'shaku' ? '尺' : mUnit;
+  div.innerHTML = `
+    <div class="room-item-header">
+      <div class="room-name-wrap">
+        <span class="room-num">${roomCount}</span>
+        <input class="room-name-input" type="text" value="${roomNames[(roomCount-1) % roomNames.length]}" placeholder="部屋名">
+      </div>
+      <button class="room-del" onclick="delRoom(this)">×</button>
+    </div>
+    <div class="room-dims">
+      <input type="number" placeholder="縦" inputmode="decimal">
+      <span class="dim-x">×</span>
+      <input type="number" placeholder="横" inputmode="decimal">
+      <span class="dim-unit">${unitLabel}</span>
+    </div>
+  `;
+  list.appendChild(div);
+}
+
+function delRoom(btn) {
+  const item = btn.closest('.room-item');
+  if (document.querySelectorAll('.room-item').length <= 1) return;
+  item.remove();
+}
+
+function calcMulti() {
+  const err = document.getElementById('m_err');
+  err.classList.remove('show');
+  const items = document.querySelectorAll('.room-item');
+  let totalM2 = 0;
+  let roomResults = [];
+  let hasErr = false;
+
+  items.forEach(item => {
+    const name = item.querySelector('.room-name-input').value || '部屋';
+    const inputs = item.querySelectorAll('input[type=number]');
+    const h = parseFloat(inputs[0].value);
+    const w = parseFloat(inputs[1].value);
+    if (!h || !w || h<=0 || w<=0) { hasErr = true; return; }
+    const m2 = toM(h, mUnit) * toM(w, mUnit);
+    totalM2 += m2;
+    roomResults.push({ name, h, w, m2 });
+  });
+
+  if (hasErr) { err.textContent = '未入力の部屋があります'; err.classList.add('show'); }
+  if (roomResults.length === 0) { err.textContent = '有効な部屋がありません'; err.classList.add('show'); return; }
+
+  const totalTsubo = totalM2 / TSUBO;
+  const el = document.getElementById('m_result');
+
+  let rowsHtml = '';
+  roomResults.forEach(r => {
+    rowsHtml += `
+      <div class="multi-room-row">
+        <div class="multi-room-name">${r.name}</div>
+        <div class="multi-room-dim">${r.h}×${r.w}${mUnit==='shaku'?'尺':mUnit}</div>
+        <div class="multi-room-vals">
+          <div class="multi-room-m2">${fmt(r.m2)}㎡</div>
+          <div class="multi-room-tsubo">${fmt(r.m2/TSUBO, 2)}坪</div>
+        </div>
+      </div>
+    `;
+  });
+
+  el.innerHTML = `
+    <div class="multi-result-card">
+      <div class="multi-total-label">合計（${roomResults.length}部屋）</div>
+      <div class="multi-twin">
+        <div class="multi-half">
+          <div class="multi-rl">面積</div>
+          <div><span class="multi-big">${fmt(totalM2)}</span><span class="multi-big-unit">㎡</span></div>
+        </div>
+        <div class="multi-half">
+          <div class="multi-rl">坪数</div>
+          <div><span class="multi-big">${fmt(totalTsubo)}</span><span class="multi-big-unit">坪</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="multi-rooms-card">
+      <div class="multi-rooms-header">部屋別　内訳</div>
+      ${rowsHtml}
+    </div>
+  `;
+  el.classList.add('show');
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ===== 変換モード =====
+function convertLive() {
+  const m2 = parseFloat(document.getElementById('c_m2').value);
+  const tsubo = parseFloat(document.getElementById('c_tsubo').value);
+
+  if (m2 > 0) {
+    document.getElementById('c_to_tsubo').textContent = fmt(m2 / TSUBO, 4);
+  } else {
+    document.getElementById('c_to_tsubo').textContent = '—';
+  }
+  if (tsubo > 0) {
+    document.getElementById('c_to_m2').textContent = fmt(tsubo * TSUBO, 4);
+  } else {
+    document.getElementById('c_to_m2').textContent = '—';
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (currentMode === 'single') calcSingle();
+  else if (currentMode === 'multi') calcMulti();
+});
+</script>
+</body>
+</html>
